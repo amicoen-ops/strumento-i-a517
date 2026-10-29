@@ -1,0 +1,86 @@
+I-A517 STRUMENTO DI VOLO
+Copyright (c) 2026 Enrico D'Amico (Enry). Tutti i diritti riservati.
+
+Questa licenza vale per il software, i sorgenti, gli schemi, i disegni, la
+documentazione e le immagini del progetto "Strumento di volo 80 mm I-A517"
+(di seguito "il Software"): app per telefono e tablet (versione da browser e
+APK Android), schermi dello strumento, servizio e configurazione per Raspberry,
+firmware della scheda sensori, circuito stampato, contenitore e generatori dei
+documenti. Il Software è dell'autore. Non è software libero né open source.
+
+
+1. CHE COSA PUOI FARE
+
+Gratuitamente, senza bisogno di chiedere:
+
+  a) scaricare, installare e usare l'app nella forma pubblicata dall'autore
+     (APK dalle release ufficiali del repository amicoen-ops/strumento-i-a517
+     o versione da browser all'indirizzo ufficiale), per uso personale e non
+     commerciale;
+  b) consultare i sorgenti nel repository pubblico, come consentito dai
+     termini di servizio di GitHub.
+
+
+2. CHE COSA NON PUOI FARE SENZA PERMESSO SCRITTO DELL'AUTORE
+
+  a) copiare, modificare, adattare o tradurre il Software, in tutto o in
+     parte, né crearne opere derivate;
+  b) distribuire, pubblicare, ripubblicare, cedere, concedere in sublicenza,
+     noleggiare o vendere il Software o sue copie, anche modificate o
+     ricompilate;
+  c) usare il Software, o parti del suo codice, in altri prodotti o servizi;
+  d) usare il Software a scopo commerciale o di lucro, compresi corsi,
+     scuole di volo e noleggi a pagamento;
+  e) togliere o cambiare le note di copyright, questa licenza o le avvertenze
+     sull'uso in volo;
+  f) usare il nome "I-A517" o il nome dell'autore per presentare versioni
+     non ufficiali.
+
+Per i permessi scrivi a amicoen@gmail.com.
+
+
+3. COMPONENTI E DATI DI TERZE PARTI
+
+Le librerie di terze parti incluse nell'app restano sotto le proprie licenze,
+indicate nel file NOTE-TERZE-PARTI. Questa licenza non le limita.
+Mappe, terreno, meteo e campi vengono da servizi esterni, con le loro
+condizioni e attribuzioni, elencate nella pagina Info dell'app.
+
+
+4. USO IN VOLO, NESSUNA GARANZIA
+
+Il Software è sperimentale e non certificato, e non è un equipaggiamento
+approvato da EASA, ENAC o altre autorità. Il pilota in comando resta l'unico
+responsabile della condotta del volo. Le avvertenze complete sono nella
+pagina Info dell'app e vanno accettate al primo avvio.
+
+Il Software è fornito gratuitamente "così com'è", senza garanzie di alcun
+tipo, esplicite o implicite, di funzionamento, precisione o idoneità a uno
+scopo. Nei limiti consentiti dalla legge, l'autore non risponde di danni
+diretti o indiretti, a persone o cose, derivanti dall'uso o dall'impossibilità
+di usare il Software o i dati che mostra.
+
+
+5. DONAZIONI
+
+Una donazione è un contributo volontario. Non acquista il Software, non dà
+diritti in più rispetto a questa licenza e non obbliga l'autore a fornire
+assistenza o aggiornamenti.
+
+
+6. FINE DELLA LICENZA, LEGGE
+
+Se violi questa licenza, il permesso di usare il Software cessa
+automaticamente. Questa licenza è regolata dalla legge italiana.
+
+
+-------------------------------------------------------------------------------
+IN ENGLISH (summary; the Italian text above prevails)
+
+Copyright (c) 2026 Enrico D'Amico. All rights reserved. Not open source.
+You may install and use the official app for personal, non-commercial use and
+view the source on GitHub. Copying, modifying, redistributing, selling or
+reusing any part of the Software requires the author's written permission
+(amicoen@gmail.com). Experimental, non-certified, provided "as is" without any
+warranty; the pilot in command is solely responsible for the flight.
+Third-party components keep their own licenses (see NOTE-TERZE-PARTI).

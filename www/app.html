@@ -7,6 +7,8 @@
 <style>[hidden]{display:none!important}</style>
 <script src="version.js"></script>
 </head><body>
+<!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+     Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). -->
 <title>I-A517 Piano di Volo</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1078,6 +1080,8 @@ function renderLiveStatus(s){
   $('status').innerHTML=rows.map(([st,a,b])=>`<div class="st"><span class="dot" style="background:var(--${st});box-shadow:none"></span><b>${a}</b><span class="v">${esc(b)}</span></div>`).join('');
 }
 
+// I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+// Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE).
 // =====================================================================================
 //  App del piano dentro la versione telefono: i dati vanno allo strumento sullo stesso
 //  telefono; meteo da Open-Meteo (modello sui campi della rotta), METAR da incollare.

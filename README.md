@@ -21,3 +21,11 @@ Le pagine si generano dai sorgenti dello strumento (`pfd.html`, `companion.html`
 - Dispositivi nelle vicinanze: solo quando colleghi il GLO 2.
 
 Strumento sperimentale, non certificato: altimetro, anemometro, vista fuori e radio restano il riferimento.
+
+## Licenza
+© 2026 Enrico D'Amico. **Tutti i diritti riservati**: il codice è visibile, ma non è software libero né open source.
+
+- **Puoi** installare e usare l'APK delle Release ufficiali per uso personale e non commerciale.
+- **Serve il permesso scritto** dell'autore (amicoen@gmail.com) per copiare, modificare, ridistribuire, vendere o riusare il codice.
+
+Testo completo in [LICENSE](LICENSE). Le librerie incluse (Capacitor e plugin, AndroidX) restano sotto le proprie licenze: vedi [NOTE-TERZE-PARTI](NOTE-TERZE-PARTI).

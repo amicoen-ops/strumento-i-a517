@@ -1,3 +1,5 @@
+// I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+// Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE).
 package it.ia517.strumento;
 
 import android.os.Bundle;

@@ -9,6 +9,8 @@
 <script src="version.js"></script>
 <script src="capacitor.js"></script>
 </head><body>
+<!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+     Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). -->
 <title>I-A517 Strumento</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <style>
@@ -89,6 +91,8 @@
   button.ghost{background:var(--panel2);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:7px 14px;font:inherit;font-size:13px;cursor:pointer}
   button.ghost.hi{border-color:var(--mag);color:#ffd6f8}
   button.ghost:focus-visible,.tg:focus-within,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+   Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). */
   /* ---------------- versione telefono / tablet ---------------- */
   body.phone{padding:6px;gap:8px;min-height:100dvh;box-sizing:border-box;justify-content:flex-start;overflow-x:hidden;
     padding-top:max(6px,env(safe-area-inset-top,0px));padding-bottom:max(6px,env(safe-area-inset-bottom,0px));
@@ -180,6 +184,8 @@
     <ul id="menuList"></ul>
   </div>
   <div class="toast" id="toast"></div>
+<!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+     Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). -->
   <div class="ph-alert" id="phAlert" hidden></div>
   <div class="ph-wait" id="phWait" hidden>
     <b>In attesa di GPS e sensori</b>
@@ -189,6 +195,8 @@
   <div class="prompt" id="prompt" hidden><b id="promptT"></b><span>OK: SÌ · ◀ ▶: NO</span></div>
 </div>
 
+<!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+     Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). -->
 <div class="unit unit2" id="unit2" hidden><canvas id="pfd2"></canvas></div>
 <aside class="ph-side" id="phSide">
   <div class="ph-stat" id="phStat"></div>
@@ -1747,6 +1755,8 @@ function learnPropose(seg,kind){
       ()=>{ addUserField(u); toast('PISTA SALVATA '+u.short+' '+le+'/'+he); },30);
 }
 
+// I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+// Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE).
 // =====================================================================================
 //  VERSIONE TELEFONO / TABLET
 //  Sensori del telefono al posto della scheda sensori: GPS (posizione, velocità, traccia,
@@ -2705,6 +2715,8 @@ PH.gloLine=function(line){
   else if('serviceWorker' in navigator && location.hostname==='localhost') navigator.serviceWorker.register('sw.js').catch(()=>{});
 })();
 
+// I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
+// Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE).
 // =====================================================================================
 //  Info: versione e aggiornamenti, segnalazioni, avvertenze, crediti, donazione
 // =====================================================================================
@@ -2713,9 +2725,12 @@ const PH_INFO={
   mail:'amicoen@gmail.com',                       // le segnalazioni arrivano qui (FormSubmit, poi posta)
   paypal:'https://www.paypal.me/amicoen',
   releases:'https://api.github.com/repos/amicoen-ops/strumento-i-a517/releases/latest',
-  termsVersion:1,
+  termsVersion:2,                                 // 2: aggiunta la licenza
+  owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.5','Licenza: © Enrico D\'Amico, tutti i diritti riservati. È nelle avvertenze, da riaccettare una volta, e nella pagina Info con il testo completo e le librerie di terze parti.'],
+  ['1.0.4','Pagina Info: versione installata, aggiornamenti, segnalazioni per posta, avvertenze, crediti, donazione con PayPal.'],
   ['1.0','Prima versione per telefono e tablet: orizzonte e mappa dello strumento, rotte, circuito, piano di volo e meteo; GPS del telefono o Garmin GLO 2; terreno vero e avviso TERRENO; mappe OpenTopoMap, OpenStreetMap, satellite Esri, IGM 1:25.000, ortofoto; METAR e TAF; diario di volo con GPX; voce; tablet con due viste.'],
 ];
 const PH_TERMS=`<p><b>Strumento sperimentale, non certificato.</b> Questa app non è un equipaggiamento approvato (EASA, ENAC o altre autorità) e non sostituisce alcuno strumento di bordo, carta aeronautica, documento ufficiale o briefing. Serve solo come ausilio alla consapevolezza della situazione.</p>
@@ -2723,6 +2738,7 @@ const PH_TERMS=`<p><b>Strumento sperimentale, non certificato.</b> Questa app no
 <p><b>Limiti noti.</b> Il telefono non misura la velocità rispetto all'aria né la pressione: la velocità mostrata è quella al suolo, la quota è quella GPS con errori di decine di metri. L'assetto viene dai sensori del telefono e può essere sbagliato con supporti non rigidi, vibrazioni, accelerazioni o dopo un riavvio. GPS, sensori, Bluetooth e batteria possono smettere di funzionare senza preavviso. Campi, piste, quote, ostacoli, spazi aerei, terreno, mappe e meteo possono essere incompleti, sbagliati o non aggiornati; il meteo è una previsione di modello. Gli avvisi (terreno, spazi aerei, tramonto) possono mancare o arrivare in ritardo.</p>
 <p><b>Uso in volo.</b> Fissa il telefono in modo che non intralci i comandi e non cada; non distrarti dal pilotaggio e dalla vista fuori. Verifica sempre AIP, NOTAM, carte e meteo ufficiali prima del volo.</p>
 <p><b>Nessuna garanzia.</b> L'app è fornita gratuitamente «così com'è», senza garanzie di alcun tipo, esplicite o implicite, di funzionamento, precisione o idoneità a uno scopo. Nei limiti consentiti dalla legge, l'autore declina ogni responsabilità per danni diretti o indiretti, a persone o cose, derivanti dall'uso o dall'impossibilità di usare l'app o i dati che mostra.</p>
+<p><b>Licenza.</b> © 2026 Enrico D'Amico, tutti i diritti riservati. Puoi installare e usare l'app ufficiale per uso personale e non commerciale. Copiarla, modificarla, ridistribuirla, venderla o riusarne il codice richiede il permesso scritto dell'autore. Le librerie di terze parti restano sotto le proprie licenze.</p>
 <p><b>Dati personali.</b> Posizione, rotte, campi e diario di volo restano sul telefono. Escono solo le richieste ai servizi di mappe, terreno e meteo (con la zona visualizzata) e le segnalazioni che invii tu.</p>`;
 
 PH.version=function(){ const b=window.IA517_BUILD||{version:'1.0.0',build:'dev',channel:'web'}; return b; };
@@ -2786,7 +2802,7 @@ PH.terms=function(){
   const a=lsGet('ia517p_terms',null); if(a && a.v>=PH_INFO.termsVersion) return;
   const d=document.createElement('div'); d.className='ph-sheet ph-terms'; d.id='phTerms';
   d.innerHTML=`<div class="ph-imp"><section><h3>Prima di usare l'app</h3>${PH_TERMS}
-    <label class="ph-chk"><input type="checkbox" id="phTermsOk"> Ho letto e accetto: uso l'app sotto la mia responsabilità, come ausilio e non come strumento primario.</label>
+    <label class="ph-chk"><input type="checkbox" id="phTermsOk"> Ho letto e accetto le avvertenze e la licenza: uso l'app sotto la mia responsabilità, come ausilio e non come strumento primario.</label>
     <div class="ph-btns"><button class="ph-btn pri" id="phTermsGo" disabled>Accetto e continuo</button></div></section></div>`;
   document.body.appendChild(d);
   el('phTermsOk').onchange=e=>{ el('phTermsGo').disabled=!e.target.checked; };
@@ -2806,7 +2822,7 @@ PH.renderInfo=function(){
     return `<p class="ph-sub">Controllo non riuscito${u.msg?' ('+String(u.msg).replace(/</g,'')+')':''}. ${when}.</p>`; };
   const box=el('phInfoBody');
   box.innerHTML=`
-  <section class="ph-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><b>I-A517 Strumento di volo</b><span>${PH_INFO.author}</span></div></section>
+  <section class="ph-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><b>I-A517 Strumento di volo</b><span>${PH_INFO.author}</span><span class="ph-sub">© 2026 ${PH_INFO.owner} · Tutti i diritti riservati</span></div></section>
   <section><h3>Versione</h3>
     <div class="ph-row"><span>Installata</span><small><b>${b.version}</b> · build ${b.build} · ${b.channel==='apk'?'app Android':'app dal browser'}</small></div>
     <div class="ph-row"><span>Installata o aggiornata il</span><small>${dt(h[0]&&h[0].t)}</small></div>
@@ -2828,13 +2844,18 @@ PH.renderInfo=function(){
     <p class="ph-sub" id="phRepMsg">${PH.reports.length?PH.reports.length+' segnalazioni in coda.':''}</p>
   </section>
   <section><h3>Avvertenze e responsabilità</h3>${PH_TERMS}</section>
-  <section><h3>Crediti e licenze</h3>
+  <section><h3>Licenza</h3>
+    <p>© 2026 ${PH_INFO.owner}. <b>Tutti i diritti riservati.</b> Non è software libero.</p>
+    <p class="ph-sub">Puoi installare e usare l'app ufficiale per uso personale e non commerciale. Per copiarla, modificarla, ridistribuirla, usarla a scopo di lucro o riusarne il codice serve il permesso scritto dell'autore (${PH_INFO.mail}). Una donazione non cambia queste condizioni.</p>
+    <details id="phLicDet"><summary class="ph-sub">Testo completo della licenza e delle librerie di terze parti</summary><pre class="ph-pre" id="phLicTxt">…</pre></details>
+  </section>
+  <section><h3>Crediti</h3>
     <div class="ph-cred">
       <p><b>Campi e piste</b>: OurAirports (pubblico dominio) e note del pilota.</p>
       <p><b>Mappe</b>: © OpenStreetMap contributors (ODbL); OpenTopoMap (CC BY-SA); World Imagery © Esri, Vantor, Earthstar Geographics; IGM 1:25.000 e ortofoto AGEA dal Geoportale Nazionale (CC BY-SA).</p>
       <p><b>Terreno</b>: Terrain Tiles su AWS Open Data (Mapzen, da SRTM, EU-DEM e altre fonti pubbliche).</p>
       <p><b>Meteo</b>: Open-Meteo (CC BY 4.0); METAR e TAF da aviationweather.gov (NOAA).</p>
-      <p><b>Software</b>: Capacitor (MIT) con i plugin Filesystem, Share, Keep Awake, Text to Speech; segnalazioni via FormSubmit.</p>
+      <p><b>Librerie</b>: Capacitor e i plugin Filesystem, Share, Keep Awake, Text to Speech (MIT); AndroidX (Apache 2.0). Segnalazioni via FormSubmit.</p>
       <p><b>Progetto</b>: strumento di volo DIY da 80 mm per l'Avid Flyer I-A517.</p>
     </div>
   </section>
@@ -2842,6 +2863,8 @@ PH.renderInfo=function(){
     <p class="ph-sub">L'app è gratuita e senza pubblicità. Se vuoi contribuire alle spese (servizi, hardware per le prove), puoi offrire un caffè o quello che preferisci.</p>
     <a class="ph-btn ph-paypal" href="${PH_INFO.paypal}" target="_blank" rel="noopener">♥ Dona con PayPal</a>
   </section>`;
+  el('phLicDet').ontoggle=async e=>{ const pre=el('phLicTxt'); if(!e.target.open || pre.dataset.ok) return;
+    try{ const r=await fetch('LICENZE.txt'); pre.textContent=(await r.text()).replace(/([a-zà-ù0-9,;:'")])\n(?=[^\n\s])/g,'$1 ').replace(/([a-zà-ù0-9,;:'")])\n {2,}(?![a-z]\) )/g,'$1 '); pre.style.whiteSpace='pre-wrap'; pre.dataset.ok=1; }catch(_){ pre.textContent='Testo non disponibile: lo trovi nel file LICENSE del repository amicoen-ops/strumento-i-a517.'; } };
   let kind='Problema';
   el('phRepKind').querySelectorAll('button').forEach(x=>x.onclick=()=>{ kind=x.dataset.k; el('phRepKind').querySelectorAll('button').forEach(y=>y.setAttribute('aria-pressed',y===x)); });
   el('phRepPre').textContent=PH.diag();
