@@ -6,6 +6,7 @@
 <link rel="icon" href="icon-192.png">
 <style>[hidden]{display:none!important}</style>
 <script src="version.js"></script>
+<script src="regole.js"></script>
 </head><body>
 <!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
      Copia, modifica e distribuzione solo con permesso scritto dell'autore (vedi il file LICENSE). -->
@@ -697,12 +698,7 @@ function runBriefing(c){
     if(!overlap){
       if(pMax<lo){ const m=lo-pMax; status=m>=300?'ok':'warn'; verdict=`Passi sotto: base ${a.lo.txt}, tu al massimo ${Math.round(pMax)} ft (margine ${Math.round(m)} ft)`; }
       else { const m=pMin-hi; status=m>=300?'ok':'warn'; verdict=`Passi sopra: limite ${a.hi.txt}, tu almeno ${Math.round(pMin)} ft (margine ${Math.round(m)} ft)`; }
-    } else if(/^(P)$/.test(a.cls)){ status='bad'; verdict='Area proibita alla tua quota: cambia rotta'; }
-    else if(/^(R)$/.test(a.cls)){ status='bad'; verdict='Area regolamentata alla tua quota: evitala o verifica che non sia attiva (AUP e NOTAM)'; }
-    else if(/^(CTR|A|B|C|D)$/.test(a.cls)){ status='bad'; verdict='Spazio controllato alla tua quota: serve autorizzazione ATC, verifica cosa consente il tuo attestato'; }
-    else if(/^(Q)$/.test(a.cls)){ status='warn'; verdict='Area pericolosa alla tua quota: verifica l\'attività prima del volo'; }
-    else if(/^(RMZ|TMZ|E)$/.test(a.cls)||/ATZ/i.test(a.name)){ status='warn'; verdict='Alla tua quota: contatto radio richiesto, verifica le procedure'; }
-    else { status='ok'; verdict='Alla tua quota, nessun vincolo particolare per la classe'; }
+    } else { const v=IA517_RULES.verdict(a); status=v.status; verdict=v.text; }
     asp.push({a,segs,lo,hi,status,verdict});
   }
   asp.sort((p,q)=>p.segs[0][0]-q.segs[0][0]);
@@ -1217,12 +1213,14 @@ addEventListener('online',()=>fetchModel(false));
       if(iAC>=0 && ay){ const typ=ay.slice(2).trim().toUpperCase(), cls=blk[iAC].slice(2).trim().toUpperCase();
         if(typ==='FIR'||typ==='UIR'){ blk=[]; return; }
         if(MAP[typ] && (cls==='UNC'||cls==='UNCLASSIFIED'||!cls)) blk[iAC]='AC '+MAP[typ];
+        const nm=(blk.find(l=>/^AN\s/i.test(l))||'');
+        if(/\bFMC\b/i.test(nm)) blk[iAC]='AC FMC';                              // area FMC: codice e ascolto raccomandati, non un divieto
         const iAN=blk.findIndex(l=>/^AN\s/i.test(l));
         if(iAN>=0 && /^(CTR|CTA|TMA|ATZ|MATZ|TMZ|RMZ)$/.test(typ) && !new RegExp('\\b'+typ+'\\b','i').test(blk[iAN])) blk[iAN]='AN '+typ+' '+blk[iAN].slice(2).trim(); }
       out.push(...blk); blk=[]; };
     for(const l of text.split(/\r?\n/)){ if(/^AC\s/i.test(l)) flush(); blk.push(l); }
     flush(); return out.join('\n'); };
-  { const lb=clsLabel; clsLabel=function(a){ return {SPORT:'Attività sportive',OFR:'Sorvolo limitato',UNC:'Non classificato',GSEC:'Settore alianti'}[a.cls]||lb(a); }; }
+  { const lb=clsLabel; clsLabel=function(a){ return {FMC:'Area FMC',SPORT:'Attività sportive',OFR:'Sorvolo limitato',UNC:'Non classificato',GSEC:'Settore alianti'}[a.cls]||lb(a); }; }
   const base=parseOpenAir; parseOpenAir=function(text){ return base(norm(String(text||''))); };
   // gli spazi salvati sono stati letti all'avvio prima di questa correzione: si rileggono
   const st=store.get('ia517_openair',null);
@@ -1333,6 +1331,96 @@ addEventListener('online',()=>fetchModel(false));
   const notam=$('notamList'), nSec=notam&&notam.closest('section');
   if(nSec) nSec.after(card(['mappa/','cerca-notam/','airport-easy-briefing/','sigmet-e-airmet/']));
   const met=$('tab-meteo'); if(met){ const first=met.querySelector('section'); const c=card(['metar/','taf/','sigmet-e-airmet/','carte-meteo/']); if(first) first.before(c); else met.appendChild(c); }
+})();
+
+
+// ---------------- tipo di volo: controlli della rotta secondo le regole (VDS basico, VDS avanzato, VFR) ----------------
+(function(){
+  const R=window.IA517_RULES; if(!R) return;
+  const brief=$('tab-briefing'); if(!brief) return;
+  const card=document.createElement('section'); card.className='card'; card.id='profCard';
+  brief.insertBefore(card, brief.firstChild);
+  const demAt=(lat,lon)=>{ try{ return parent&&parent.phDemAt?parent.phDemAt(lat,lon,10):NaN; }catch(e){ return NaN; } };
+  // ostacolo più alto entro 5 km: terreno vero (ostacoli artificiali non compresi)
+  const top5=(lat,lon)=>{ let m=-1e9, ok=0; const cosl=Math.cos(lat*Math.PI/180);
+    for(const r of [0,2500,5000]) for(let k=0;k<(r?8:1);k++){ const a=k*Math.PI/4, la=lat+r*Math.cos(a)/110540, lo=lon+r*Math.sin(a)/(111320*cosl);
+      const z=demAt(la,lo); if(z===z){ ok++; if(z>m) m=z; } }
+    return ok?m/0.3048:NaN; };
+  function checks(c,b){
+    const prof=R.get(), out=[];
+    if(!c||!b||!b.samples||!b.samples.length) return {prof,out};
+    if(prof==='vds_basico'){
+      const agl=R.vdsMaxAgl(new Date()), tot=b.tot;
+      let worst=null, minLim=1e9, nT=0, nS=0;
+      for(const s of b.samples){
+        if(s.x<1.5 || s.x>tot-1.5) continue;                                 // decollo e atterraggio esclusi
+        const h=profileAt(s.x,tot,b.e0,b.e1); let t5=top5(s.lat,s.lon); nS++;
+        if(!(t5===t5)) t5=Math.max(b.e0,b.e1); else nT++;
+        const lim=t5+agl; if(lim<minLim) minLim=lim;
+        if(h>lim+20 && (!worst || h-lim>worst.over)) worst={x:s.x,h,lim,over:h-lim};
+      }
+      if(worst) out.push({status:'bad',text:`Quota oltre il limite del VDS basico: al km ${worst.x.toFixed(1)} pianifichi ${Math.round(worst.h)} ft, il massimo lì è circa ${Math.round(worst.lim/50)*50} ft AMSL (${agl} ft sull'ostacolo più alto entro 5 km${agl===500?', giorno feriale':', sabato, domenica o festivo'}). Abbassa la crociera a ${Math.max(0,Math.floor(minLim/100)*100)} ft o meno.`});
+      else if(nS) out.push({status:'ok',text:`Quota entro il limite del VDS basico: ${agl} ft sull'ostacolo più alto entro 5 km${agl===500?' (giorno feriale)':' (sabato, domenica o festivo)'}.`});
+      if(nS && nT<nS/2) out.push({status:'warn',text:'Terreno non ancora scaricato su parte della rotta: il limite di quota lì è calcolato solo sulle quote dei campi. Scaricalo in Impostazioni › Volare senza internet.'});
+      // almeno 5 km dagli aeroporti
+      const ends=new Set([c.pts&&c.pts[0]&&c.pts[0].id, c.dst&&c.dst.id]); const seen=new Set();
+      for(const s of b.samples) for(const f of FIELDS){ if(f.kind!=='aero'||seen.has(f.id)) continue;
+        const d=Math.hypot((f.lat-s.lat)*110540,(f.lon-s.lon)*111320*Math.cos(s.lat*Math.PI/180));
+        if(d<5000){ seen.add(f.id); out.push({status:ends.has(f.id)?'warn':'bad',text:ends.has(f.id)?`${f.short} è un aeroporto: per il VDS basico decollo e atterraggio richiedono l'autorizzazione ENAC.`:`Passi a ${(d/1000).toFixed(1)} km da ${f.short} ${f.name}: il VDS basico deve stare ad almeno 5 km dagli aeroporti, salvo autorizzazione ENAC.`}); } }
+      out.push({status:'warn',text:'Vietato sorvolare centri abitati, assembramenti, aree militari e impianti industriali: controlla la rotta sulla carta.'});
+    } else {
+      out.push({status:'ok',text:prof==='vfr'?'Aviazione generale VFR: tutte le classi aperte al VFR, con autorizzazione ATC in C e D; classe A vietata. Quote minime SERA: 1000 ft sui centri abitati, 500 ft altrove.':'VDS avanzato: tutto lo spazio aperto al VFR, con radio, transponder ed ELT; autorizzazione ATC in C e D; classe A vietata.'});
+    }
+    return {prof,out};
+  }
+  let last={prof:R.get(),out:[]};
+  function render(){
+    const prof=R.get(), agl=R.vdsMaxAgl(new Date()), day=new Date().toLocaleDateString('it-IT',{weekday:'long'});
+    card.innerHTML=`<h2>Tipo di volo</h2>
+      <div class="seg" id="profSeg" style="display:flex;gap:6px;flex-wrap:wrap">${Object.entries(R.PROFILES).map(([k,v])=>`<button type="button" class="btn${k===prof?' pri':''}" data-p="${k}">${v.name}</button>`).join('')}</div>
+      <div class="sub" style="margin-top:6px">${prof==='vds_basico'?`VDS basico: solo fuori dagli spazi controllati (classi A–E) e dalle ATZ, ad almeno 5 km dagli aeroporti, fino a <b>${agl} ft</b> sull'ostacolo più alto entro 5 km (oggi è ${day}${agl===500?': 500 ft; 1000 ft sabato, domenica e festivi':': 1000 ft'}).`:(prof==='vds_avanzato'?'VDS avanzato: tutto lo spazio aperto al volo a vista, con radio, transponder ed ELT.':'Aviazione generale VFR: classi C e D con autorizzazione ATC, E libera, A vietata.')} Fonte: ${R.SOURCE}. Salvo autorizzazioni ENAC; valgono l'AIP in vigore e i NOTAM.</div>
+      <div id="profList" style="margin-top:8px">${last.out.map(o=>`<div class="it"><span class="v ${o.status}">${esc(o.text)}</span></div>`).join('')}</div>`;
+    card.querySelectorAll('[data-p]').forEach(bt=>bt.onclick=()=>{ R.set(bt.dataset.p); update(); });
+  }
+  const rb=runBriefing; runBriefing=function(c){ const b=rb(c); try{ last=checks(c,b); b.prof=last; }catch(e){ console.error(e); } return b; };
+  const rr=renderBriefing; renderBriefing=function(c){ rr(c); try{ render();
+      const nB=last.out.filter(o=>o.status==='bad').length, nW=last.out.filter(o=>o.status==='warn').length, nm=R.PROFILES[R.get()].name;
+      const pill=nB?`<span class="pill bad">${nm}: ${nB} da risolvere</span>`:`<span class="pill ok">${nm}: rotta compatibile</span>`;
+      $('bSummary').insertAdjacentHTML('afterbegin',pill); }catch(e){ console.error(e); } };
+  render();
+  // il tipo di volo cambiato dallo strumento (Impostazioni) aggiorna il briefing
+  addEventListener('storage',e=>{ if(e.key===R.KEY) update(); });
+  window.IA517_profChanged=()=>update();
+})();
+
+
+// ---------------- piano: scegliere i campi scrivendo il nome o la sigla (partenza, tappe, arrivo, alternato) ----------------
+(function(){
+  const norm=x=>String(x||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+  const style=document.createElement('style');
+  style.textContent=`.fsrch{margin:-2px 0 8px}.fsrch input{width:100%;box-sizing:border-box;min-height:42px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--ink);font:inherit;padding:0 10px}
+    .fsrch .res{display:flex;flex-direction:column;gap:4px;margin-top:4px}.fsrch .res button{text-align:left;min-height:40px;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;padding:4px 10px}
+    .fsrch .res button b{margin-right:6px}.fsrch .res .none{font-size:.85em;color:var(--dim,#8a96a2);padding:2px 4px}`;
+  document.head.appendChild(style);
+  function attach(sel,label){
+    if(!sel || sel.dataset.srch) return; sel.dataset.srch='1';
+    const host=sel.closest('.rp')||sel, box=document.createElement('div'); box.className='fsrch';
+    box.innerHTML=`<input type="search" enterkeyhint="search" autocomplete="off" autocapitalize="characters" placeholder="${label}: scrivi il nome o la sigla"><div class="res"></div>`;
+    host.after(box);
+    const inp=box.querySelector('input'), res=box.querySelector('.res');
+    const pick=id=>{ sel.value=id; sel.dispatchEvent(new Event('change',{bubbles:true})); inp.value=''; res.innerHTML=''; };
+    const find=()=>{ const q=norm(inp.value).trim(); if(!q){ res.innerHTML=''; return []; }
+      const ws=q.split(/\s+/), opts=[...sel.options].filter(o=>o.value && ws.every(w=>norm(o.textContent+' '+o.value).includes(w))).slice(0,8);
+      res.innerHTML=opts.length?opts.map(o=>{ const [a,...b]=o.textContent.split(' · '); return `<button type="button" data-id="${esc(o.value)}"><b>${esc(a)}</b>${esc(b.join(' · '))}</button>`; }).join(''):'<div class="none">Nessun campo con questo nome: aggiungilo in Campi › Nuovo campo o pista.</div>';
+      res.querySelectorAll('button').forEach(bt=>bt.onclick=()=>pick(bt.dataset.id)); return opts; };
+    inp.addEventListener('input',find);
+    inp.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); const o=find(); if(o.length) pick(o[0].value); } });
+  }
+  const tags={from:'Partenza',dest:'Arrivo',alt:'Alternato'};
+  const deco=()=>{ document.querySelectorAll('#route select[data-k]').forEach(s=>attach(s,tags[s.dataset.k]||('Tappa '+(+String(s.dataset.k).slice(2)+1)))); };
+  const rr=renderRoute; renderRoute=function(){ rr(); deco(); };
+  deco();
+  const cp=$('nfCopy'); if(cp){ const fb=$('nfFrom'); if(fb) fb.addEventListener('click',()=>setTimeout(()=>attach(cp,'Campo da copiare'),0)); }
 })();
 
 mergeUserFields(); addRwRow();

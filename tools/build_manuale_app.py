@@ -22,7 +22,7 @@ for n, f in [("DV", "DejaVuSans.ttf"), ("DVB", "DejaVuSans-Bold.ttf"), ("DVI", "
 registerFontFamily("DV", normal="DV", bold="DVB", italic="DVI", boldItalic="DVB")
 registerFontFamily("DVC", normal="DVC", bold="DVCB", italic="DVC", boldItalic="DVCB")
 
-VER = "1.0.14"
+VER = "1.0.16"
 OUT = "/mnt/user-data/outputs/Manuale_App_I-A517_Strumento.pdf"
 M = "/home/claude/android/man/"
 NAVY = colors.HexColor("#0c447c"); MAG = colors.HexColor("#b0168f"); GREY = colors.HexColor("#5f5e5a")
@@ -238,6 +238,7 @@ s += [table(["Comando", "Che cosa fa"], [
 # 9 ---------------------------------------------------------------
 s += chap(9, CH_[8])
 s += [shots([("14_menu.png", "Il menu"), ("15_direct_to.png", "DIRECT TO con ricerca"), ("16_nuova_rotta.png", "NUOVA ROTTA")], 50 * mm)]
+s += [P("In cima al menu c'è sempre una barra con <b>◀ Indietro</b> (torna al menu principale, o chiude dal menu principale) e <b>✕</b> (chiude il menu).")]
 s += [table(["Voce", "Uso"], [
     ["DIRECT TO…", "Elenco dei campi dal più vicino, con distanza e rotta. In alto c'è il campo di <b>ricerca</b>: scrivi il nome o la sigla (per esempio «asiago» o «LIDA») e Invio sceglie il primo trovato."],
     ["ROTTE SALVATE…", "Le rotte fatte nel Piano o con NUOVA ROTTA. Si attivano dal primo punto; se sei già sul primo, si parte dal secondo."],
@@ -271,6 +272,7 @@ s += [table(["Scheda", "Contenuto"], [
     ["Meteo", "Modello Open-Meteo su ogni campo del piano: vento a 10 m, a circa 2500 e 5000 ft, raffiche, nubi, visibilità, QNH; METAR e TAF ufficiali scaricati da soli nell'APK; collegamenti a Desk Aeronautico."],
     ["Strumento", "Stato dello strumento (GPS, GLO 2, sensori, bussola, montaggio, quota, terreno, internet, dati salvati)."],
 ], [24 * mm, 150 * mm])]
+s += [P("Sotto ogni scelta (partenza, tappe, arrivo, alternato) c'è una casella di ricerca: scrivi una parte del nome o la sigla, per esempio «asiago», e tocca il campo trovato; Invio sceglie il primo.")]
 s += [Paragraph("Correggere o aggiungere un campo", H3)]
 s += steps(["Piano › Campi › <b>Nuovo campo o pista</b>.",
             "Per correggere un campo che c'è, usa <b>Copia da un campo</b>: tieni la stessa sigla e cambia posizione, quota o piste.",
@@ -291,6 +293,14 @@ s += [side("45_spazi_aerei.png", [
     P("Con gli spazi veri, il Briefing confronta rotta e quota con ogni spazio (sotto, dentro, sopra; classe, limiti) e lo strumento dà gli avvisi in volo (capitolo 14). "
       "openAIP è curata da volontari: per il volo vale l'AIP in vigore."),
 ], 50 * mm, "Briefing › Spazi aerei sulla rotta")]
+s += [Paragraph("Tipo di volo: la rotta controllata con le tue regole", H3)]
+s += [side("47_tipo_di_volo.png", [
+    P("In cima al Briefing, e in Impostazioni › <b>Tipo di volo</b>, scegli <b>VDS basico</b> (di serie), <b>VDS avanzato</b> o <b>Aviazione generale VFR</b>. Il briefing giudica ogni spazio aereo e la rotta con quelle regole."),
+    *bullets(["<b>VDS basico</b> (DPR 133/2010, art. 9): fuori dagli spazi controllati (classi A–E) e dalle ATZ; almeno 5 km dagli aeroporti; al massimo <b>500 ft</b> sull'ostacolo più alto entro 5 km, <b>1000 ft</b> sabato, domenica e festivi; niente sorvolo di centri abitati. L'app controlla la quota di crociera lungo la rotta sul terreno vero e dice di quanto abbassarla.",
+              "<b>VDS avanzato</b> (art. 8–9: radio, transponder, ELT) e <b>aviazione generale VFR</b>: tutto lo spazio aperto al VFR; classi C e D con autorizzazione ATC; E libera; A vietata.",
+              "Sempre: P proibite; R regolamentate da evitare salvo disattivazione (AIP, AUP, NOTAM); pericolose da verificare. Le aree <b>FMC</b> sono una raccomandazione (codice transponder e ascolto), non un divieto."]),
+    P("Salvo autorizzazioni ENAC. I dati vengono da openAIP: per il volo valgono l'AIP in vigore e i NOTAM."),
+], 62 * mm, "Briefing › Tipo di volo")]
 s += [Paragraph("NOTAM", H3)]
 s += [P("Incolla i NOTAM del briefing ufficiale, nel formato ICAO con la riga Q): «Analizza NOTAM» li confronta con rotta, quota e orario e li segna ROTTA, VICINO oppure OK.")]
 s += [side("46_desk.png", [
@@ -312,13 +322,17 @@ s += [P("Il <b>volo dimostrativo</b> (Impostazioni) è diverso: gira da solo tra
 
 # 14 --------------------------------------------------------------
 s += chap(14, CH_[13])
+s += [side("18_spazio_qui.png", [
+    P("<b>Spazio aereo in cui sei.</b> Sotto le spie dello strumento una riga dice sempre dove sei, alla tua quota, e se è consentito con il tuo tipo di volo: verde (per esempio «CLASSE G · VDS BASICO: consentito»), giallo (attenzione) o rosso («D · CTA MILANO Z23 CANDIA · VIETATO VDS BASICO»). Dice anche il primo spazio sopra di te e, per il VDS basico, la quota massima in quel punto. Funziona anche in simulazione; toccandola si apre il Briefing."),
+], 56 * mm, "Simulazione dentro la CTA Milano Z23")]
 s += [side("17_avviso.png", [
     P("Gli avvisi compaiono in alto sullo strumento, con <b>voce</b> e <b>vibrazione</b> (spegnibili in Impostazioni › Avvisi). Funzionano in volo, cioè da quando il diario ha aperto il volo."),
 ], 52 * mm, "Avviso di terreno")]
 s += [table(["Avviso", "Quando"], [
     ["TERRENO! CABRA (rosso)", "Guardando avanti sulla traccia, con il vario attuale, entro 30 secondi il margine sul terreno scende sotto 100 ft. Si ripete ogni 5 secondi."],
     ["ATTENZIONE TERRENO (giallo)", "Entro 60 secondi il margine scende sotto 300 ft."],
-    ["DENTRO … (rosso)", "Sei dentro uno spazio aereo vero di classe A–D, zona R, P, D o simili, tra i suoi limiti (±100 ft)."],
+    ["DENTRO … (rosso o giallo)", "Sei dentro uno spazio aereo vero che il tuo tipo di volo non consente (rosso, «VIETATO VDS BASICO») o che chiede attenzione (giallo), tra i suoi limiti (±100 ft). Anche in simulazione."],
+    ["SOPRA IL LIMITE VDS", "Solo VDS basico: sei più alto di 500 ft (1000 ft sabato, domenica e festivi) sull'ostacolo più alto entro 5 km."],
     ["TRA 30 SECONDI / TRA 1 MINUTO …", "Lo spazio è sulla traccia, alla quota prevista; con classe, nome e limiti."],
     ["TRAMONTO TRA 30 / 10 MINUTI", "Calcolato per la posizione e il giorno."],
     ["Pista, circuito, decollo", "A voce: pista scelta o cambiata, ingresso, sottovento, base, finale, atterrato, prossimo punto, fine rotta."],
@@ -402,6 +416,7 @@ s += [table(["Sezione", "Che cosa contiene"], [
     ["Stato", "GPS del telefono, GLO 2, posizione in uso, sensori di movimento, bussola, montaggio, quota GPS, terreno, internet, dati salvati."],
     ["Posizione", "Fonte (automatica, solo GLO 2, solo telefono), collega o scollega il GLO 2."],
     ["Montaggio", "Livella ora, livella a terra, telefono verticale; orizzonte più morbido; fotogrammi al secondo."],
+    ["Tipo di volo", "VDS basico, VDS avanzato, aviazione generale VFR: decide che cosa è consentito."],
     ["Bussola", "A terra e lento, sempre, mai; declinazione magnetica."],
     ["Quota GPS", "Geoide, azzera taratura, tara qui con una quota nota."],
     ["Volare senza internet", "Scarica terreno, scarica mappa della zona."],

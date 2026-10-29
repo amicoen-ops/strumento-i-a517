@@ -108,6 +108,7 @@ if ws:
         const n=w.IA517_asp().length; PH.show('volo');
         return JSON.stringify({spazi:n, messaggio:d.getElementById('oaipMsg').textContent.slice(0,220)}); })()"""))
     shot("06b_spazi_aerei")
+    time.sleep(2); log("spazio qui", ev("document.getElementById('phAsp').textContent"))
     log("bussola", ev("JSON.stringify({prua:PH.mag.hdg!=null?Math.round(PH.mag.hdg):null,fonte:PH.mag.src||null,errore:PH.mag.err||null,in_uso:PH.magInUse()})"))
     log("prestazioni", ev("JSON.stringify({ms:PH.perf.avg.toFixed(1),blocchi:PH.perf.stalls,fps:PH.fps,vicini:PH.nearF&&PH.nearF.length,terreno:PH.dem.size,tessere:PH.tiles.size})"))
     step("08_demo", "(typeof PH.setDemo==='function'?(PH.setDemo(true),'demo'):'manca setDemo')", pause=25)

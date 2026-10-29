@@ -10,7 +10,7 @@ SRC = Path(sys.argv[1]) if len(sys.argv) > 1 else HERE.parent / "android" / "www
 DST = HERE / "www"
 if DST.exists(): shutil.rmtree(DST)
 DST.mkdir()
-for f in ["index.html", "app.html", "version.js", "LICENZE.txt", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"]:
+for f in ["index.html", "app.html", "version.js", "regole.js", "LICENZE.txt", "sw.js", "manifest.webmanifest", "icon-192.png", "icon-512.png", "icon-maskable-512.png"]:
     shutil.copy(SRC / f, DST / f)
 shutil.copy(HERE / "node_modules/@capacitor/core/dist/capacitor.js", DST / "capacitor.js")
 idx = (DST / "index.html").read_text(encoding="utf-8")

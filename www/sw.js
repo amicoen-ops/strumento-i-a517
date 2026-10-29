@@ -1,7 +1,7 @@
 // Service worker: l'app funziona anche senza internet.
 // Pagine: dalla cache e aggiornate in sottofondo. Terreno e mappa: dalla cache appena scaricati.
 const V='ia517-app-1.0.0';
-const CORE=['./','index.html','app.html','version.js','LICENZE.txt','manifest.webmanifest','icon-192.png','icon-512.png'];
+const CORE=['./','index.html','app.html','version.js','regole.js','LICENZE.txt','manifest.webmanifest','icon-192.png','icon-512.png'];
 // nell'app installata (APK) le pagine sono già sul telefono: si mettono in cache solo terreno, mappe e meteo
 const NATIVE=self.location.hostname==='localhost' && self.location.port==='';
 self.addEventListener('install',e=>{ e.waitUntil((NATIVE?Promise.resolve():caches.open(V).then(c=>c.addAll(CORE))).then(()=>self.skipWaiting())); });

@@ -7,6 +7,7 @@
 <link rel="icon" href="icon-192.png">
 <style>[hidden]{display:none!important}</style>
 <script src="version.js"></script>
+<script src="regole.js"></script>
 <script src="capacitor.js"></script>
 </head><body>
 <!-- I-A517 Strumento di volo · © 2026 Enrico D'Amico · Tutti i diritti riservati.
@@ -181,6 +182,17 @@
   .ph-q{display:flex;flex-direction:column;gap:2px;margin:4px 0 6px}
   .ph-q input{width:100%;box-sizing:border-box;min-height:40px;border-radius:9px;border:1px solid var(--mag,#ff4fd8);background:rgba(6,10,15,.9);color:#fff;font:600 16px system-ui,sans-serif;padding:0 10px}
   .ph-q small{font:600 11px system-ui,sans-serif;color:#9fb0c4;text-align:center}
+  /* spazio aereo in cui sei */
+  .ph-asp{font:600 12.5px/1.35 system-ui,sans-serif;padding:6px 10px;border-radius:9px;border:1px solid;cursor:pointer}
+  .ph-asp b{font-weight:800;letter-spacing:.02em}
+  .ph-asp.o{color:#7ff0bf;border-color:rgba(25,227,138,.45);background:rgba(25,227,138,.08)}
+  .ph-asp.w{color:#ffd27a;border-color:rgba(255,176,32,.5);background:rgba(255,176,32,.09)}
+  .ph-asp.b{color:#ff9a9a;border-color:rgba(255,77,77,.6);background:rgba(255,77,77,.12)}
+  /* barra del menu: indietro e chiudi */
+  .ph-mbar{display:flex;justify-content:space-between;gap:8px;margin:0 0 4px}
+  .ph-mbar button{min-height:38px;padding:0 12px;border-radius:9px;border:1px solid rgba(255,255,255,.3);background:rgba(6,10,15,.92);color:#f2f4f7;font:700 14px system-ui,sans-serif}
+  .ph-mbar button:last-child{min-width:44px}
+  .ph-mbar button:active{background:rgba(255,255,255,.2)}
 </style>
 
 <h1>Orizzonte Sintetico</h1>
@@ -2276,23 +2288,56 @@ PH.checkTerrain=function(){
 };
 PH.pip=function(p,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i], b=poly[j];
   if(((a.lat>p.lat)!==(b.lat>p.lat)) && (p.lon<(b.lon-a.lon)*(p.lat-a.lat)/(b.lat-a.lat)+a.lon)) ins=!ins; } return ins; };
+PH.aspList=function(){ try{ const w=el('phAppFrame').contentWindow; if(w && w.IA517_asp) return w.IA517_asp(); }catch(e){} return []; };
 PH.checkAirspace=function(){
-  if(PH.demo || !PH.flight || !S.gpsReal) return;
-  let list=[]; try{ const w=el('phAppFrame').contentWindow; if(w && w.IA517_asp) list=w.IA517_asp(); }catch(e){}
+  if(!(PH.sim || (PH.flight && S.gpsReal && !PH.demo))) return;
+  const list=PH.aspList();
   if(!list.length) return;
   const v=S.gs/3.6, tr=(S.trk!=null?S.trk:S.hdg)*D2R, cosl=Math.cos(S.lat*D2R);
   const at=t=>({lat:S.lat+Math.cos(tr)*v*t/110540, lon:S.lon+Math.sin(tr)*v*t/(111320*cosl), ft:S.alt+S.vs*t/FT2M});
   const lim=(L,p)=>{ if(L.ref==='AGL'){ const z=terrain(...xy(enu(p.lat,p.lon))); return L.ft+(z===z?z/FT2M:0); } return L.ft; };
   for(const a of list){
-    if(/^(E|F|G|W|GP|GSEC|SPORT)$/.test(a.cls)) continue;
+    if(!window.IA517_RULES || !IA517_RULES.alerting(a)) continue;
     const bb=a.bb; if(!bb || S.lat<bb[0]-0.1 || S.lat>bb[1]+0.1 || S.lon<bb[2]-0.15 || S.lon>bb[3]+0.15) continue;
     const label=`${a.cls} ${a.name}`.slice(0,40);
     for(const t of [0,30,60]){ const p=at(t);
       if(PH.pip(p,a.pts) && p.ft>=lim(a.lo,p)-100 && p.ft<=lim(a.hi,p)+100){
-        if(t===0) PH.alert('asp0'+a.name,'W','DENTRO '+label,120000);
+        if(t===0){ const v=IA517_RULES.verdict(a); PH.alert('asp0'+a.name,v.status==='bad'?'W':'C','DENTRO '+label+(v.status==='bad'?' · VIETATO '+IA517_RULES.PROFILES[IA517_RULES.get()].short:''),120000); }
         else PH.alert('asp1'+a.name,'C',`TRA ${t===30?'30 SECONDI':'1 MINUTO'}: ${label} · ${a.lo.txt}–${a.hi.txt}`,180000);
         break; } }
   }
+};
+// spazio aereo dove sei adesso, alla tua quota (con il giudizio del tipo di volo) e il primo spazio sopra di te
+PH.top5=function(){ const now=performance.now(); if(PH.t5 && now-PH.t5.t<5000 && Math.abs(PH.t5.lat-S.lat)<0.01 && Math.abs(PH.t5.lon-S.lon)<0.014) return PH.t5.ft;
+  let m=-1e9, ok=0; const cosl=Math.cos(S.lat*D2R);
+  for(const r of [0,2500,5000]) for(let k=0;k<(r?8:1);k++){ const a=k*Math.PI/4, z=phDemAt(S.lat+r*Math.cos(a)/110540, S.lon+r*Math.sin(a)/(111320*cosl), 10); if(z===z){ ok++; if(z>m) m=z; } }
+  const ft=ok?m/FT2M:NaN; PH.t5={t:now,lat:S.lat,lon:S.lon,ft}; return ft; };
+PH.aspHere=function(){
+  const list=PH.aspList(), R=window.IA517_RULES; if(!R) return null;
+  const p={lat:S.lat,lon:S.lon}, ft=S.alt, inside=[], above=[];
+  const lim=(L)=>{ if(L.ref==='AGL'){ const z=terrain(...xy(enu(p.lat,p.lon))); return L.ft+(z===z?z/FT2M:0); } return L.ft; };
+  for(const a of list){ const bb=a.bb; if(!bb || p.lat<bb[0] || p.lat>bb[1] || p.lon<bb[2] || p.lon>bb[3] || !PH.pip(p,a.pts)) continue;
+    const lo=lim(a.lo), hi=lim(a.hi);
+    if(ft>=lo-50 && ft<=hi+50) inside.push({a,v:R.verdict(a)}); else if(lo>ft) above.push({a,lo}); }
+  const rank={bad:2,warn:1,ok:0}; inside.sort((x,y)=>rank[y.v.status]-rank[x.v.status]);
+  above.sort((x,y)=>x.lo-y.lo);
+  return {n:list.length, inside, above:above[0]||null};
+};
+PH.renderAsp=function(){
+  const b=el('phAsp'), R=window.IA517_RULES; if(!b||!R) return;
+  const esc=x=>String(x).replace(/[<&>]/g,c=>({'<':'&lt;','&':'&amp;','>':'&gt;'}[c]));
+  const prof=R.get(), pn=R.PROFILES[prof].short, h=PH.aspHere(); let cls='o', txt;
+  if(!h || !h.n){ cls='w'; txt=`<b>SPAZI AEREI NON CARICATI</b> · Piano › Briefing › Scarica gli spazi aerei d'Italia`; }
+  else if(!h.inside.length || h.inside.every(x=>x.v.status==='ok')){ const fmc=h.inside.find(x=>x.a.cls==='FMC'), sq=fmc&&(String(fmc.a.name).match(/SSR\s*(\d{4})/i)||[])[1];
+    const cl=h.inside.find(x=>/^[A-G]$/.test(x.a.cls)); txt=`<b>CLASSE ${cl?esc(cl.a.cls):'G'}</b> · ${pn}: consentito`+(fmc?` · area FMC${sq?': squawk '+sq:''} e ascolto (raccomandati)`:''); }
+  else { const x=h.inside[0]; cls=x.v.status==='bad'?'b':(x.v.status==='warn'?'w':'o');
+    txt=`<b>${esc(x.a.cls)} · ${esc(String(x.a.name).slice(0,28))}</b> · ${esc(x.a.lo.txt)}–${esc(x.a.hi.txt)} · ${x.v.status==='bad'?'VIETATO '+pn:(x.v.status==='warn'?'ATTENZIONE':'consentito')}`+(h.inside.length>1?` · +${h.inside.length-1}`:''); }
+  if(h && h.n && h.above){ const gap=h.above.lo-S.alt; txt+=` · sopra: ${esc(h.above.a.cls)} ${esc(String(h.above.a.name).slice(0,18))} da ${esc(h.above.a.lo.txt)}${gap<300?' <i>(vicina)</i>':''}`; if(gap<300 && cls==='o' && R.verdict(h.above.a).status==='bad') cls='w'; }
+  if(prof==='vds_basico'){ const t5=PH.top5(), max=t5===t5?t5+R.vdsMaxAgl(new Date()):NaN;
+    if(max===max){ const over=S.alt-max; txt+=` · max VDS ${Math.round(max/50)*50} ft`;
+      if(over>50){ cls='b'; txt=`<b>SOPRA IL LIMITE VDS BASICO</b> (${Math.round(max/50)*50} ft) · `+txt;
+        if((PH.flight&&S.gpsReal)||PH.sim) PH.alert('vdsalt','C',`SOPRA IL LIMITE VDS: MASSIMO ${Math.round(max/50)*50} PIEDI`,60000); } } }
+  b.className='ph-asp '+cls; b.innerHTML=txt;
 };
 PH.checkSun=function(){
   const now=new Date(), day=now.toDateString()+Math.round(S.lat)+Math.round(S.lon);
@@ -2531,7 +2576,7 @@ PH.info=function(g){
       `<i class="${gpsOk?'o':'b'}">${PH.src==='glo'?'GLO 2':'GPS'}</i><i class="${attOk?'o':'b'}">ASSETTO</i><i class="${PH.dem.size?'o':'w'}">TERRENO</i><i class="${navigator.onLine?'o':'w'}">NET</i>`;
   }
   if(S.gpsReal && !lost('att')) PH.seenAll=true;             // dopo il primo fix le perdite le segnalano le bandierine rosse
-  const wait=el('phWait'); if(wait) wait.hidden=PH.demo || PH.seenAll || PH.waitClosed;
+  const wait=el('phWait'); if(wait) wait.hidden=PH.demo || PH.seenAll || PH.waitClosed || !menuEl.hidden || PH.sim;
 };
 PH.afterFrame=function(g,dt){
   PH.drawSplit(g);
@@ -2539,6 +2584,7 @@ PH.afterFrame=function(g,dt){
   if(now-PH.lastHalf>500){ PH.lastHalf=now; try{ PH.info(g); }catch(e){} try{ PH.zoomBtns&&PH.zoomBtns(); }catch(e){} if(zi!==PH.ziSaved){ PH.ziSaved=zi; lsSet('ia517p_zoom',zi); } }
   if(now-PH.lastSec>1000){ PH.lastSec=now;
     try{ PH_nearFields(); }catch(e){}
+    try{ PH.renderAsp(); }catch(e){ console.error(e); }
     try{ PH.simTick(); if(PH.sim && !el('phSim').hidden) PH.renderSim(); }catch(e){ console.error(e); }
     try{ PH.applyForecast(); PH.checkTerrain(); PH.checkAirspace(); PH.checkSun(); }catch(e){ console.error(e); }
     if(PH.demVer!==PH.demVerSeen && now-(PH.demRast||0)>1500){ PH.demVerSeen=PH.demVer; PH.demRast=now; MR.zi=-1; PH.fieldElev(); }
@@ -2591,6 +2637,10 @@ PH.renderImp=function(){
     <div class="ph-seg" id="phFps">${[[30,'30 · consuma meno'],[60,'60 · più fluido']].map(([v,l])=>`<button data-f="${v}" aria-pressed="${PH.fps===v}">${l}</button>`).join('')}</div>
     <p class="ph-sub">Più morbido toglie il tremolio di vibrazioni e movimenti della mano, ma l'orizzonte arriva un po' dopo il movimento vero. In volo va bene 2–4; 0 è la risposta immediata.</p>
   </section>
+  <section><h3>Tipo di volo</h3>
+    <div class="ph-seg" id="phProf">${Object.entries(IA517_RULES.PROFILES).map(([k2,v])=>`<button data-p="${k2}" aria-pressed="${IA517_RULES.get()===k2}">${v.name}</button>`).join('')}</div>
+    <p class="ph-sub">Decide che cosa è consentito. <b>VDS basico</b>: fuori dagli spazi controllati (A–E) e dalle ATZ, ad almeno 5 km dagli aeroporti, fino a 500 ft sull'ostacolo più alto entro 5 km (1000 ft sabato, domenica e festivi). <b>VDS avanzato</b> e <b>aviazione generale VFR</b>: tutto lo spazio aperto al VFR, con autorizzazione ATC in C e D; classe A vietata. Fonte: DPR 133/2010 art. 8–9. Salvo autorizzazioni ENAC; valgono l'AIP e i NOTAM.</p>
+  </section>
   <section><h3>Bussola</h3>
     <p class="ph-sub">La prua viene dalla bussola del telefono, corretta in prua vera con la declinazione magnetica. In volo, sopra 25 km/h, conta la traccia GPS corretta col vento, perché nell'abitacolo motore e metallo disturbano la bussola. Se la bussola sbaglia, calibrala muovendo il telefono a otto per qualche secondo, lontano da oggetti di metallo.</p>
     <div class="ph-seg" id="phCmp">${[['ground','A terra e lento'],['always','Sempre'],['never','Mai']].map(([k2,l])=>`<button data-c="${k2}" aria-pressed="${PH.compassMode===k2}">${l}</button>`).join('')}</div>
@@ -2640,6 +2690,8 @@ PH.renderImp=function(){
   el('phLevelGnd').onclick=()=>{ if(PH.level(+el('phGp').value||0)) stat(); };
   el('phMountReset').onclick=()=>{ PH.resetMount(); stat(); };
   el('phGeo').onchange=()=>{ const v=+el('phGeo').value; if(v>-110&&v<90){ PH.geoid=v; lsSet('ia517p_geoid',v); PH.vario.h=NaN; } };
+  el('phProf').querySelectorAll('button').forEach(b=>b.onclick=()=>{ IA517_RULES.set(b.dataset.p); el('phProf').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); PH.renderAsp();
+    try{ const w=el('phAppFrame').contentWindow; w.IA517_profChanged&&w.IA517_profChanged(); }catch(e){} toast('TIPO DI VOLO: '+IA517_RULES.PROFILES[b.dataset.p].short); });
   el('phCmp').querySelectorAll('button').forEach(b=>b.onclick=()=>{ PH.compassMode=b.dataset.c; lsSet('ia517p_compass',PH.compassMode); el('phCmp').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); stat(); });
   el('phDecl').onchange=()=>{ const v=+el('phDecl').value; if(v>=-30&&v<=30){ PH.decl=v; lsSet('ia517p_decl',v); } };
   el('phAltSet').onclick=()=>{ const v=+el('phAltKnown').value, src=PH.src||'phone';
@@ -2898,6 +2950,13 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   const hit=f=>{ const q=norm(PH.q).trim(); if(!q) return true; const hay=norm(f.short+' '+f.name+' '+f.id); return q.split(/\s+/).every(w=>hay.includes(w)); };
   { const di=dtoItems; dtoItems=function(){ return di().filter(x=>x.t!=='field'||hit(x.f)); }; }
   { const bi=buildItems; buildItems=function(){ return bi().filter(x=>x.t!=='field'||hit(x.f)); }; }
+  // barra fissa in cima al menu: Indietro e Chiudi (prima c'era solo una riga dell'elenco, che scorreva via)
+  const mBar=document.createElement('div'); mBar.className='ph-mbar';
+  mBar.innerHTML='<button type="button" id="phMBack">◀ Indietro</button><button type="button" id="phMClose" aria-label="Chiudi il menu">✕</button>';
+  el('menuTitle').before(mBar);
+  ['pointerdown','click'].forEach(ev=>mBar.addEventListener(ev,e=>e.stopPropagation()));
+  el('phMBack').addEventListener('click',()=>{ PH.act('menu indietro'); if(menuMode==='main') closeMenu(); else openMain(); });
+  el('phMClose').addEventListener('click',()=>{ PH.act('menu chiuso'); closeMenu(); });
   const qBox=document.createElement('div'); qBox.className='ph-q'; qBox.hidden=true;
   qBox.innerHTML='<input id="phQ" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="characters" placeholder="Scrivi il nome o la sigla del campo"><small id="phQn"></small>';
   el('menuTitle').after(qBox);
@@ -2972,6 +3031,8 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   });
   document.querySelectorAll('.ph-nav button').forEach(b=>b.addEventListener('click',()=>PH.show(b.dataset.v)));
   el('phStat').addEventListener('click',()=>{ if(PH.sim) PH.show('sim'); });
+  { const ab=document.createElement('div'); ab.className='ph-asp w'; ab.id='phAsp'; ab.textContent='Spazio aereo…'; el('phStat').after(ab);
+    ab.addEventListener('click',()=>PH.show('piano')); }
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>PH.show('volo')));
   el('phWaitDemo').onclick=()=>{ PH.setDemo(true); };
   el('phWaitClose').onclick=()=>{ PH.waitClosed=true; el('phWait').hidden=true; };
@@ -3017,6 +3078,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.16','Tipo di volo (VDS basico, VDS avanzato, aviazione generale VFR) in Impostazioni e nel Briefing: la rotta viene controllata con le sue regole (DPR 133/2010 per il VDS: spazi controllati e ATZ, 500/1000 ft sull\'ostacolo più alto entro 5 km, 5 km dagli aeroporti). Sotto lo strumento una riga dice sempre in che spazio aereo sei e se è consentito, anche in simulazione; gli avvisi degli spazi aerei funzionano anche simulando. Le aree FMC sono indicate come raccomandazione, non come divieto. Nel menu dello strumento, barra fissa con «Indietro» e «✕». Nel Piano i campi si scelgono anche scrivendo nome o sigla.'],
   ['1.0.15','Spazi aerei d\'Italia da openAIP corretti: il file giusto (lo stesso di XCSoar, aggiornato ogni notte, senza chiave) e lettura del formato OpenAir 2.0, con zone R, P e pericolose riconosciute (1555 spazi). Le aree per attività sportive si vedono ma non danno avvisi.'],
   ['1.0.14','Spazi aerei veri d\'Italia con un pulsante: «Scarica gli spazi aerei d\'Italia (openAIP)». Prima il file pubblico di openAIP, senza account; se non risponde, l\'API openAIP con la chiave gratuita. Si riscaricano da soli a ogni ciclo AIRAC.'],
   ['1.0.13','Bussola letta direttamente dal sensore di Android (prima dipendeva dal browser interno e poteva mancare). Da fermo mappa e riquadro usano la prua della bussola (scritta PRUA) invece della traccia GPS, che a velocità zero è solo rumore.'],
