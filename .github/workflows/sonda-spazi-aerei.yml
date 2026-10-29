@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
   issues: write
 
 jobs:
@@ -15,25 +15,24 @@ jobs:
     steps:
       - name: Prova gli indirizzi
         run: |
-          B=https://storage.googleapis.com/29f98e10-a489-4c82-ae5e-489dbcd4912f
           {
-          for u in \
-            "$B/it_asp.txt" "$B/it_asp.openair" "$B/it_asp_txt" "$B/it_asp.geojson" "$B/it_asp.json" \
-            "$B?prefix=it_" "$B/?prefix=it_asp" \
-            "https://storage.googleapis.com/storage/v1/b/29f98e10-a489-4c82-ae5e-489dbcd4912f/o?prefix=it_" \
-            "https://api.core.openaip.net/api/airspaces?country=IT&limit=1" \
-            "https://download.xcsoar.org/repository" \
-            "https://snapshots.openflightmaps.org/live/" \
-            "https://www.openaip.net/data/exports" ; do
+          for u in https://storage.openaip.net/openaip-system-exports/it_asp_v2.txt https://storage.openaip.net/openaip-system-exports/it_asp.txt https://storage.openaip.net/openaip-system-exports/it_apt.cupx; do
             echo "=== $u"
-            curl -sS -L -A "Mozilla/5.0" -o body.bin -D head.txt -w "codice %{http_code} · %{size_download} byte · %{content_type}\n" --max-time 40 "$u" || echo "errore curl"
-            grep -i -E "^(location|content-type|x-goog|www-authenticate):" head.txt | head -5
-            head -c 700 body.bin | tr -d '\000' ; echo
+            curl -sS -L -o "$(basename $u)" -D head.txt -w "codice %{http_code} · %{size_download} byte · %{content_type}\n" --max-time 60 "$u" || echo "errore curl"
+            grep -i -E "^(content-type|access-control|last-modified|cache-control):" head.txt
           done
-          echo "=== righe con openaip nel repository di XCSoar"
-          curl -sS --max-time 40 https://download.xcsoar.org/repository | grep -i -B3 -A6 -E "ital|openaip|_asp" | head -80
+          echo "=== intestazioni CORS con Origin"
+          curl -sS -o /dev/null -D - -H "Origin: https://localhost" https://storage.openaip.net/openaip-system-exports/it_asp_v2.txt | grep -i -E "access-control|^HTTP"
+          echo "=== prime righe"; head -40 it_asp_v2.txt
+          echo "=== tipi AC"; grep -E "^AC " it_asp_v2.txt | sort | uniq -c | sort -rn | head -30
+          echo "=== chiavi usate"; cut -c1-2 it_asp_v2.txt | sort | uniq -c | sort -rn | head -20
           } > sonda.txt 2>&1
           cat sonda.txt
+      - name: Copia del file nella pre-release diagnostica
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload diagnostica -R ${{ github.repository }} --clobber it_asp_v2.txt || true
       - name: Risultato in una issue
         env:
           GH_TOKEN: ${{ github.token }}
