@@ -1978,6 +1978,7 @@ PH={
   geoid:lsGet('ia517p_geoid',47), altOfsBy:lsGet('ia517p_altofs2',{phone:lsGet('ia517p_altofs',0),glo:0}), altOfs:0, altCal:lsGet('ia517p_altcal',null),
   srcPref:lsGet('ia517p_src','auto'), src:null, phoneFix:null, glo:{port:null,fix:null,gga:null,want:lsGet('ia517p_glo',false),n:0,hz:0,err:''},
   perf:{avg:0,max:0,n:0,stalls:0,lastRaf:0}, trail:[], fps:lsGet('ia517p_fps',30), hbPrev:lsGet('ia517p_hb',null),
+  compassMode:lsGet('ia517p_compass','ground'), decl:lsGet('ia517p_decl',3), mag:{hdg:null,t:0,abs:false},
   ahrs:new PhMahony(), vario:new PhVario(3), ahrsInit:false, smooth:lsGet('ia517p_smooth',3), attF:null, hdg:null, slipF:0, gsPrev:null, dvdt:0,
   aAvg:[0,0,0], windBuf:[], tas:null, still:0, stillBuf:[],
   voice:lsGet('ia517p_voice',true), vib:lsGet('ia517p_vib',true), wake:null, wakeOn:lsGet('ia517p_wake',true),
@@ -2025,6 +2026,25 @@ PH.level=function(groundPitchDeg){
   toast('ASSETTO LIVELLATO'+(PH.groundPitch?` · A TERRA ${PH.groundPitch}°`:''));
   return true;
 };
+// ---- bussola del telefono (orientamento assoluto: magnetometro + giroscopio + accelerometro di Android) ----
+PH.onOrient=function(e){
+  const abs=e.type==='deviceorientationabsolute'||e.absolute===true;
+  if(!abs) return; if(e.type==='deviceorientationabsolute') PH.mag.abs=true; else if(PH.mag.abs) return;
+  const al=e.alpha, be=e.beta, ga=e.gamma; if(al==null||be==null||ga==null) return;
+  const ca=Math.cos(al*D2R), sa=Math.sin(al*D2R), cb=Math.cos(be*D2R), sb=Math.sin(be*D2R), cg=Math.cos(ga*D2R), sg=Math.sin(ga*D2R);
+  const Rm=[[ca*cg-sa*sb*sg,-sa*cb,ca*sg+sa*sb*cg],[sa*cg+ca*sb*sg,ca*cb,sa*sg-ca*sb*cg],[-cb*sg,sb,cb*cg]];   // telefono -> Terra (Est, Nord, Su)
+  const scr=PH.scrAng()*D2R, c=Math.cos(scr), sn=Math.sin(scr);
+  const toDev=v=>[v[0]*c+v[1]*sn, -v[0]*sn+v[1]*c, v[2]];                 // assi dello schermo -> assi del telefono
+  const toE=v=>[Rm[0][0]*v[0]+Rm[0][1]*v[1]+Rm[0][2]*v[2], Rm[1][0]*v[0]+Rm[1][1]*v[1]+Rm[1][2]*v[2], Rm[2][0]*v[0]+Rm[2][1]*v[1]+Rm[2][2]*v[2]];
+  let w=toE(toDev(PH.M[0]));                                               // asse avanti dell'aereo
+  if(Math.abs(w[2])>0.85) w=toE(toDev([0,1,0]));                           // telefono in piano: conta il lato alto dello schermo
+  if(Math.hypot(w[0],w[1])<0.2) return;
+  const h=wrap360(Math.atan2(w[0],w[1])*R2D+(+PH.decl||0));                // magnetico -> vero con la declinazione
+  PH.mag.raw=PH.mag.hdg==null?h:wrap360(PH.mag.raw+angDiff(h,PH.mag.raw)*0.25);
+  PH.mag.hdg=PH.mag.raw; PH.mag.t=performance.now();
+};
+PH.magInUse=function(){ return PH.mag.hdg!=null && performance.now()-PH.mag.t<1500 && !PH.demo &&
+  (PH.compassMode==='always' || (PH.compassMode==='ground' && !(S.gpsReal && S.gs>25))); };
 // verso dello schermo: 0 verticale, 90 o 270 orizzontale
 PH.scrAng=function(){ if(PH.angTest!=null) return PH.angTest;
   const o=screen.orientation; const v=o&&typeof o.angle==='number'?o.angle:(typeof window.orientation==='number'?window.orientation:0); return ((v%360)+360)%360; };
@@ -2065,7 +2085,9 @@ PH.onMotion=function(e){
   // prua: giroscopio tra un fix e l'altro
   const phi=ro*D2R, th=pi*D2R, psiDot=(wb[1]*Math.sin(phi)+wb[2]*Math.cos(phi))/Math.max(0.2,Math.cos(th));
   if(PH.hdg==null) PH.hdg=S.hdg;
-  PH.hdg=wrap360(PH.hdg+psiDot*R2D*dt); S.hdg=PH.hdg;
+  PH.hdg=wrap360(PH.hdg+psiDot*R2D*dt);
+  if(PH.magInUse()) PH.hdg=wrap360(PH.hdg+angDiff(PH.mag.hdg,PH.hdg)*Math.min(1,dt/0.8));   // a terra o lento: la bussola tiene la prua
+  S.hdg=PH.hdg;
   // vario: accelerazione verticale dalla terna terrestre
   const [dx,dy,dz]=PH.ahrs.down(), aUp=(-(dx*fb[0]+dy*fb[1]+dz*fb[2])-1)*9.80665;
   PH.vario.predict(aUp,dt);
@@ -2405,6 +2427,7 @@ PH.status=function(){
       PH.glo.port?(PH.glo.fix?`${PH.glo.fix.sats??'?'} sat · HDOP ${PH.glo.fix.hdop??'?'} · ${PH.glo.hz} Hz`:'collegato, nessun fix'):(PH.glo.want?'in attesa di ricollegarsi':(PH.glo.err||'non collegato'))],
     ['ok','Posizione in uso',PH.demo?'simulata':(PH.src==='glo'?'Garmin GLO 2':(PH.src==='phone'?'GPS del telefono':'nessuna'))+' · scelta '+{auto:'automatica',phone:'solo telefono',glo:'solo GLO 2'}[PH.srcPref]],
     [PH.motionHz>20?'ok':'bad','Sensori di movimento',PH.motionHz?PH.motionHz+' Hz':'nessun dato'],
+    [PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?'ok':'warn','Bussola',PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?`${String(Math.round(PH.mag.hdg)).padStart(3,'0')}° vera · ${PH.magInUse()?'in uso':(PH.compassMode==='never'?'spenta':'in volo usa la traccia GPS')}`:'nessun dato'],
     [PH.mountCal?'ok':'warn','Montaggio',PH.mountCal?('livellato'+(PH.groundPitch?` · a terra ${PH.groundPitch}°`:'')):'telefono verticale (predefinito)'],
     [PH.altCal?'ok':'warn','Quota GPS',PH.altCal?`tarata a ${PH.altCal.field}`:'geoide '+PH.geoid+' m, non tarata'],
     [PH.dem.size?'ok':'warn','Terreno (DEM)',PH.dem.size?`${PH.dem.size} riquadri in memoria`:'non ancora scaricato'],
@@ -2562,9 +2585,16 @@ PH.renderImp=function(){
     <div class="ph-seg" id="phFps">${[[30,'30 · consuma meno'],[60,'60 · più fluido']].map(([v,l])=>`<button data-f="${v}" aria-pressed="${PH.fps===v}">${l}</button>`).join('')}</div>
     <p class="ph-sub">Più morbido toglie il tremolio di vibrazioni e movimenti della mano, ma l'orizzonte arriva un po' dopo il movimento vero. In volo va bene 2–4; 0 è la risposta immediata.</p>
   </section>
+  <section><h3>Bussola</h3>
+    <p class="ph-sub">La prua viene dalla bussola del telefono, corretta in prua vera con la declinazione magnetica. In volo, sopra 25 km/h, conta la traccia GPS corretta col vento, perché nell'abitacolo motore e metallo disturbano la bussola. Se la bussola sbaglia, calibrala muovendo il telefono a otto per qualche secondo, lontano da oggetti di metallo.</p>
+    <div class="ph-seg" id="phCmp">${[['ground','A terra e lento'],['always','Sempre'],['never','Mai']].map(([k2,l])=>`<button data-c="${k2}" aria-pressed="${PH.compassMode===k2}">${l}</button>`).join('')}</div>
+    <div class="ph-btns"><label class="ph-fld">Declinazione magnetica (°, Est positiva; Piemonte ≈ +3)<input id="phDecl" type="number" step="0.5" value="${PH.decl}"></label></div>
+  </section>
   <section><h3>Quota GPS</h3>
-    <p class="ph-sub">Il telefono non ha il barometro: la quota è quella GPS (±10–30 m), riportata al livello del mare con il geoide e tarata da sola quando sei fermo su un campo di quota nota. Non usarla al posto dell'altimetro.</p>
+    <p class="ph-sub">L'app non usa il barometro: la quota è quella GPS (±10–30 m), riportata al livello del mare con il geoide e tarata da sola quando sei fermo su un campo di quota nota. Non usarla al posto dell'altimetro.</p>
     <div class="ph-btns"><label class="ph-fld">Geoide (m, Nord Italia ≈ 47)<input id="phGeo" type="number" step="1" value="${PH.geoid}"></label><button class="ph-btn" id="phAltReset">Azzera taratura</button></div>
+    <div class="ph-btns"><label class="ph-fld">Quota vera qui, se la conosci (m)<input id="phAltKnown" type="number" step="1" placeholder="es. 229"></label><button class="ph-btn" id="phAltSet">Tara qui</button></div>
+    <p class="ph-sub">Per esempio la quota di un altimetro con il QNH del giorno, o la quota di un punto noto. Vale per la fonte in uso (GPS del telefono o GLO 2).</p>
   </section>
   <section><h3>Volare senza internet</h3>
     <p class="ph-sub">Scarica prima, con il WiFi: il terreno per la vista sintetica e gli avvisi (circa 10 MB attorno a dove sei, o alla Carolina) e la mappa di base della zona. Pagine, campi, rotte e meteo già scaricato restano sul telefono.</p>
@@ -2604,6 +2634,12 @@ PH.renderImp=function(){
   el('phLevelGnd').onclick=()=>{ if(PH.level(+el('phGp').value||0)) stat(); };
   el('phMountReset').onclick=()=>{ PH.resetMount(); stat(); };
   el('phGeo').onchange=()=>{ const v=+el('phGeo').value; if(v>-110&&v<90){ PH.geoid=v; lsSet('ia517p_geoid',v); PH.vario.h=NaN; } };
+  el('phCmp').querySelectorAll('button').forEach(b=>b.onclick=()=>{ PH.compassMode=b.dataset.c; lsSet('ia517p_compass',PH.compassMode); el('phCmp').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); stat(); });
+  el('phDecl').onchange=()=>{ const v=+el('phDecl').value; if(v>=-30&&v<=30){ PH.decl=v; lsSet('ia517p_decl',v); } };
+  el('phAltSet').onclick=()=>{ const v=+el('phAltKnown').value, src=PH.src||'phone';
+    if(!isFinite(PH.mslRaw)){ toast('ASPETTA IL GPS E RIPROVA'); return; } if(!(v>-100&&v<5000)){ toast('QUOTA NON VALIDA'); return; }
+    PH.altOfsBy[src]=v-PH.mslRaw; PH.altOfs=PH.altOfsBy[src]; PH.altCal={field:'manuale',t:Date.now(),src}; lsSet('ia517p_altofs2',PH.altOfsBy); lsSet('ia517p_altcal',PH.altCal); PH.vario.h=NaN;
+    toast(`QUOTA TARATA: ${Math.round(v)} m (${Math.round(v/FT2M)} ft)`); stat(); };
   el('phAltReset').onclick=()=>{ PH.altOfs=0; PH.altOfsBy={phone:0,glo:0}; PH.altCal=null; lsSet('ia517p_altofs2',PH.altOfsBy); lsSet('ia517p_altcal',null); PH.vario.h=NaN; stat(); };
   const dl=async(kind)=>{ const m=el('phDlMsg'); m.textContent='Scarico…';
     const r=await PH.prefetch(kind,(d,t,ok)=>{ m.textContent=`${kind==='dem'?'Terreno':'Mappa'}: ${d}/${t} riquadri`; });
@@ -2940,6 +2976,7 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   try{ screen.orientation&&screen.orientation.addEventListener('change',PH.onRotate); }catch(e){}
   addEventListener('orientationchange',PH.onRotate); addEventListener('resize',PH.onRotate);
   addEventListener('devicemotion',PH.onMotion);
+  addEventListener('deviceorientationabsolute',PH.onOrient); addEventListener('deviceorientation',PH.onOrient);
   if(navigator.geolocation) navigator.geolocation.watchPosition(PH.onPos,PH.onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   else PH.gpsErr='GPS non disponibile';
   PH.wakeLock(); document.addEventListener('visibilitychange',()=>{ PH.perf.lastRaf=0; if(!document.hidden) PH.wakeLock(); });
@@ -2969,6 +3006,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.12','Bussola del telefono: a terra e sotto 25 km/h la prua viene dalla bussola (con la declinazione, prua vera); in volo dalla traccia GPS. Scelta in Impostazioni › Bussola. Quota: si può tarare a mano con una quota nota («Tara qui»).'],
   ['1.0.11','Ricerca dei campi scrivendo il nome o la sigla, in DIRECT TO e in NUOVA ROTTA. Invito alla donazione nei primi 5 avvii (non nella versione del Play Store). Informativa sulla privacy in Info.'],
   ['1.0.10','Assetto giusto anche con il telefono girato in orizzontale (da tutte e due le parti) o capovolto: i sensori seguono il verso dello schermo, e quando giri il telefono l\'orizzonte si rilivella da solo.'],
   ['1.0.9','Corretto il blocco vero: con il GPS irregolare (al chiuso) il filtro della quota diventava instabile e la quota arrivava a miliardi di metri, bloccando la scala della quota. Nuovo filtro stabile e protezioni nel disegno. Nuova scheda SIMULA: vola da sola una rotta salvata o un direct to, con velocità, quota, vento e tempo accelerato fino a ×8. Campi di tutto il Nord Italia da OurAirports: 342 tra aeroporti e aviosuperfici.'],
