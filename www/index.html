@@ -2315,7 +2315,8 @@ PH.top5=function(){ const now=performance.now(); if(PH.t5 && now-PH.t5.t<5000 &&
 PH.aspHere=function(){
   const list=PH.aspList(), R=window.IA517_RULES; if(!R) return null;
   const p={lat:S.lat,lon:S.lon}, ft=S.alt, inside=[], above=[];
-  const lim=(L)=>{ if(L.ref==='AGL'){ const z=terrain(...xy(enu(p.lat,p.lon))); return L.ft+(z===z?z/FT2M:0); } return L.ft; };
+  const lim=(L)=>{ if(L.ref==='AGL'){ if(!L.ft) return -1e9;                  // SFC/GND: dal suolo, anche se la quota GPS è sotto il terreno
+      const z=terrain(...xy(enu(p.lat,p.lon))); return L.ft+(z===z?z/FT2M:0); } return L.ft; };
   for(const a of list){ const bb=a.bb; if(!bb || p.lat<bb[0] || p.lat>bb[1] || p.lon<bb[2] || p.lon>bb[3] || !PH.pip(p,a.pts)) continue;
     const lo=lim(a.lo), hi=lim(a.hi);
     if(ft>=lo-50 && ft<=hi+50) inside.push({a,v:R.verdict(a)}); else if(lo>ft) above.push({a,lo}); }
@@ -3078,6 +3079,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.17','Riga dello spazio aereo: uno spazio che parte dal suolo (SFC) risulta «dentro» anche a terra, quando la quota GPS è sotto il terreno.'],
   ['1.0.16','Tipo di volo (VDS basico, VDS avanzato, aviazione generale VFR) in Impostazioni e nel Briefing: la rotta viene controllata con le sue regole (DPR 133/2010 per il VDS: spazi controllati e ATZ, 500/1000 ft sull\'ostacolo più alto entro 5 km, 5 km dagli aeroporti). Sotto lo strumento una riga dice sempre in che spazio aereo sei e se è consentito, anche in simulazione; gli avvisi degli spazi aerei funzionano anche simulando. Le aree FMC sono indicate come raccomandazione, non come divieto. Nel menu dello strumento, barra fissa con «Indietro» e «✕». Nel Piano i campi si scelgono anche scrivendo nome o sigla.'],
   ['1.0.15','Spazi aerei d\'Italia da openAIP corretti: il file giusto (lo stesso di XCSoar, aggiornato ogni notte, senza chiave) e lettura del formato OpenAir 2.0, con zone R, P e pericolose riconosciute (1555 spazi). Le aree per attività sportive si vedono ma non danno avvisi.'],
   ['1.0.14','Spazi aerei veri d\'Italia con un pulsante: «Scarica gli spazi aerei d\'Italia (openAIP)». Prima il file pubblico di openAIP, senza account; se non risponde, l\'API openAIP con la chiave gratuita. Si riscaricano da soli a ogni ciclo AIRAC.'],
