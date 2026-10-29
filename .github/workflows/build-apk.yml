@@ -29,12 +29,23 @@ jobs:
       - name: Dipendenze
         run: npm ci --no-audit --no-fund
 
+      - name: Versione dentro l'app
+        run: echo "window.IA517_BUILD={version:'1.0.${{ github.run_number }}',build:'${{ github.run_number }}',channel:'apk'};" > www/version.js
+
       - name: Pagine dentro l'app
         run: npx cap sync android
 
-      - name: Compila (firmato con keystore/strumento.keystore)
+      - name: Chiave di firma (cifrata nel repository, la password è nel secret KEYSTORE_PASSWORD)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_PASSWORD" ]; then echo "::error::Manca il secret KEYSTORE_PASSWORD (Settings > Secrets and variables > Actions)"; exit 1; fi
+          openssl enc -d -aes-256-cbc -pbkdf2 -iter 200000 -in keystore/strumento.keystore.enc -out keystore/strumento.keystore -pass env:KEYSTORE_PASSWORD
+
+      - name: Compila e firma
         working-directory: android
         env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
           VERSION_CODE: ${{ github.run_number }}
           VERSION_NAME: 1.0.${{ github.run_number }}
         run: |

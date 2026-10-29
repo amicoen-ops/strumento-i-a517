@@ -19,9 +19,9 @@ android {
     signingConfigs {
         release {
             storeFile file("../../keystore/strumento.keystore")
-            storePassword System.getenv("KEYSTORE_PASSWORD") ?: "ia517-strumento"
+            storePassword System.getenv("KEYSTORE_PASSWORD")
             keyAlias "strumento"
-            keyPassword System.getenv("KEYSTORE_PASSWORD") ?: "ia517-strumento"
+            keyPassword System.getenv("KEYSTORE_PASSWORD")
         }
     }
     buildTypes {

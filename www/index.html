@@ -6,6 +6,7 @@
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon-192.png">
 <style>[hidden]{display:none!important}</style>
+<script src="version.js"></script>
 <script src="capacitor.js"></script>
 </head><body>
 <title>I-A517 Strumento</title>
@@ -115,8 +116,8 @@
   .ph-card b{font:700 19px "Oxanium",system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .ph-card small{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ph-card.warn b{color:var(--accent)}
-  .ph-nav{display:grid;grid-template-columns:1fr 1fr 1.3fr;gap:6px}
-  .ph-nav button{min-height:46px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:700 13px "Oxanium",system-ui,sans-serif;letter-spacing:.08em}
+  .ph-nav{display:grid;grid-template-columns:1fr 1fr 1.45fr 0.9fr;gap:6px}
+  .ph-nav button{min-height:46px;padding:0 2px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:700 13px "Oxanium",system-ui,sans-serif;letter-spacing:.08em}
   .ph-nav button[aria-current="page"]{color:var(--cyan);border-color:var(--cyan)}
   .ph-alert{position:absolute;left:50%;top:15%;transform:translateX(-50%);max-width:86%;padding:8px 14px;border-radius:10px;
     font:700 clamp(13px,3.4vw,20px) "Oxanium",system-ui,sans-serif;letter-spacing:.06em;text-align:center;z-index:5;pointer-events:none}
@@ -144,12 +145,24 @@
   .ph-btn{min-height:44px;padding:0 14px;border-radius:10px;border:1px solid #3a4250;background:#1c242c;color:var(--ink);font:600 14px system-ui,sans-serif}
   .ph-btn.pri{background:var(--cyan);border-color:var(--cyan);color:#00222c}
   .ph-fld{display:flex;flex-direction:column;gap:4px;font-size:12px;color:var(--dim)}
-  .ph-fld input{min-height:42px;width:9em;border-radius:10px;border:1px solid #3a4250;background:#1c242c;color:var(--ink);font:16px system-ui;padding:0 10px}
+  .ph-fld input{box-sizing:border-box;min-height:42px;width:9em;border-radius:10px;border:1px solid #3a4250;background:#1c242c;color:var(--ink);font:16px system-ui;padding:0 10px}
   .ph-chk{display:flex;gap:10px;align-items:center;min-height:40px;font-size:14px} .ph-chk input{width:22px;height:22px;accent-color:var(--cyan)}
   .ph-seg{display:flex;border:1px solid #3a4250;border-radius:10px;overflow:hidden;flex-wrap:wrap}
   .ph-seg button{flex:1;min-height:44px;border:0;background:transparent;color:var(--dim);font:600 14px system-ui,sans-serif}
   .ph-seg2 button{flex:1 1 31%;font-size:13px;padding:0 4px}
   .ph-seg button[aria-pressed="true"]{background:var(--cyan);color:#00222c}
+  .ph-hero{flex-direction:row!important;align-items:center;gap:14px!important}
+  .ph-hero img{border-radius:14px} .ph-hero b{display:block;font:700 17px "Oxanium",system-ui,sans-serif} .ph-hero span{font-size:13px;color:var(--dim)}
+  .ph-col{flex-direction:column;align-items:flex-start;gap:2px} .ph-col small{text-align:left}
+  .ph-new{color:var(--good)}
+  .ph-imp textarea{width:100%;box-sizing:border-box;min-height:110px;border-radius:10px;border:1px solid #3a4250;background:#1c242c;color:var(--ink);font:15px system-ui;padding:10px}
+  .ph-pre{white-space:pre-wrap;word-break:break-word;font:11px/1.4 ui-monospace,monospace;color:#b7c6d2;background:#0a0e12;border-radius:8px;padding:8px;max-height:220px;overflow:auto}
+  .ph-imp a.ph-btn{display:inline-flex;align-items:center;text-decoration:none}
+  .ph-cred p{margin:0 0 6px;font-size:13px;color:var(--dim)} .ph-cred b{color:var(--ink)}
+  .ph-imp p{margin:0 0 6px;font-size:14px}
+  .ph-donate{align-items:center;text-align:center}
+  .ph-paypal{background:#ffc439!important;border-color:#ffc439!important;color:#111!important;font-weight:700!important;min-height:52px!important;padding:0 26px!important;border-radius:26px!important;justify-content:center}
+  .ph-terms{z-index:40} .ph-terms .ph-imp{padding-top:max(16px,env(safe-area-inset-top,0px))}
 </style>
 
 <h1>Orizzonte Sintetico</h1>
@@ -199,11 +212,16 @@
     <button type="button" data-v="volo" aria-current="page">VOLO</button>
     <button type="button" data-v="piano">PIANO</button>
     <button type="button" data-v="imp">IMPOSTAZIONI</button>
+    <button type="button" data-v="info">INFO</button>
   </nav>
 </aside>
 <div class="ph-sheet" id="phPiano" hidden>
   <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Piano, campi e meteo</b></div>
   <iframe id="phAppFrame" src="app.html" title="Piano di volo"></iframe>
+</div>
+<div class="ph-sheet" id="phInfo" hidden>
+  <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Info, aggiornamenti e segnalazioni</b></div>
+  <div class="ph-imp" id="phInfoBody"></div>
 </div>
 <div class="ph-sheet" id="phImp" hidden>
   <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Impostazioni</b></div>
@@ -2363,9 +2381,10 @@ PH.wx=lsGet('ia517p_wx',{});
 
 // ---------------- interfaccia del telefono ----------------
 PH.show=function(v){
-  for(const [id,name] of [['phPiano','piano'],['phImp','imp']]) el(id).hidden=v!==name;
+  for(const [id,name] of [['phPiano','piano'],['phImp','imp'],['phInfo','info']]) el(id).hidden=v!==name;
   document.querySelectorAll('.ph-nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   if(v==='imp') PH.renderImp();
+  if(v==='info') PH.renderInfo();
   if(v==='piano'){ try{ const w=el('phAppFrame').contentWindow; w.IA517_refresh&&w.IA517_refresh(); }catch(e){} }
   PH.layout();
 };
@@ -2487,6 +2506,7 @@ PH.renderImp=function(){
     <div class="ph-btns"><button class="ph-btn ${PH.demo?'':'pri'}" id="phDemo">${PH.demo?'Torna ai sensori del telefono':'Avvia volo dimostrativo'}</button></div>
   </section>
   <section><h3>Diario di volo</h3><div id="phLog"></div></section>
+  <section><h3>Info</h3><div class="ph-btns"><button class="ph-btn" id="phToInfo">Versione, aggiornamenti, segnalazioni, crediti</button></div></section>
   <section><h3>Avvertenza</h3><p class="ph-sub">Strumento sperimentale per la consapevolezza della situazione, non certificato. Assetto dai sensori del telefono, velocità e quota dal GPS: nessuna velocità indicata vera, nessun altimetro barometrico. In volo valgono gli strumenti di bordo, la vista fuori, la manica a vento e la radio.</p></section>`;
   const stat=()=>{ const s=PH.status(); el('phImpStat').innerHTML=s.rows.map(([c,a,b])=>`<div class="ph-row"><span><i class="dot ${c}"></i>${a}</span><small>${b}</small></div>`).join(''); };
   stat(); clearInterval(PH.impT); PH.impT=setInterval(()=>{ if(el('phImp').hidden) clearInterval(PH.impT); else stat(); },1000);
@@ -2535,6 +2555,7 @@ PH.renderImp=function(){
   el('phWake').onchange=e=>{ PH.wakeOn=e.target.checked; lsSet('ia517p_wake',PH.wakeOn); if(PH.wakeOn) PH.wakeLock(); else if(PH.wake) PH.wake.release(); };
   el('phVoiceTest').onclick=()=>PH.say('Carolina, pista 3 6, circuito sinistro, 800 piedi',true);
   el('phFull').onclick=()=>{ try{ document.documentElement.requestFullscreen({navigationUI:'hide'}); }catch(e){} };
+  el('phToInfo').onclick=()=>PH.show('info');
   el('phDemo').onclick=()=>{ PH.setDemo(!PH.demo); PH.renderImp(); };
   PH.renderLog();
 };
@@ -2682,6 +2703,167 @@ PH.gloLine=function(line){
   if('serviceWorker' in navigator && location.protocol==='https:' && !/claude|anthropic/.test(location.hostname))
     navigator.serviceWorker.register('sw.js').catch(()=>{});
   else if('serviceWorker' in navigator && location.hostname==='localhost') navigator.serviceWorker.register('sw.js').catch(()=>{});
+})();
+
+// =====================================================================================
+//  Info: versione e aggiornamenti, segnalazioni, avvertenze, crediti, donazione
+// =====================================================================================
+const PH_INFO={
+  author:'Enry · I-A517',
+  mail:'amicoen@gmail.com',                       // le segnalazioni arrivano qui (FormSubmit, poi posta)
+  paypal:'https://www.paypal.me/amicoen',
+  releases:'https://api.github.com/repos/amicoen-ops/strumento-i-a517/releases/latest',
+  termsVersion:1,
+};
+const PH_CHANGES=[
+  ['1.0','Prima versione per telefono e tablet: orizzonte e mappa dello strumento, rotte, circuito, piano di volo e meteo; GPS del telefono o Garmin GLO 2; terreno vero e avviso TERRENO; mappe OpenTopoMap, OpenStreetMap, satellite Esri, IGM 1:25.000, ortofoto; METAR e TAF; diario di volo con GPX; voce; tablet con due viste.'],
+];
+const PH_TERMS=`<p><b>Strumento sperimentale, non certificato.</b> Questa app non è un equipaggiamento approvato (EASA, ENAC o altre autorità) e non sostituisce alcuno strumento di bordo, carta aeronautica, documento ufficiale o briefing. Serve solo come ausilio alla consapevolezza della situazione.</p>
+<p><b>Il pilota in comando resta l'unico responsabile</b> della condotta del volo, della navigazione, della separazione dal terreno, dagli ostacoli, dagli altri aeromobili e dagli spazi aerei, e del rispetto delle norme, compreso il regolamento VDS/ULM (DPR 133/2010) dove applicabile.</p>
+<p><b>Limiti noti.</b> Il telefono non misura la velocità rispetto all'aria né la pressione: la velocità mostrata è quella al suolo, la quota è quella GPS con errori di decine di metri. L'assetto viene dai sensori del telefono e può essere sbagliato con supporti non rigidi, vibrazioni, accelerazioni o dopo un riavvio. GPS, sensori, Bluetooth e batteria possono smettere di funzionare senza preavviso. Campi, piste, quote, ostacoli, spazi aerei, terreno, mappe e meteo possono essere incompleti, sbagliati o non aggiornati; il meteo è una previsione di modello. Gli avvisi (terreno, spazi aerei, tramonto) possono mancare o arrivare in ritardo.</p>
+<p><b>Uso in volo.</b> Fissa il telefono in modo che non intralci i comandi e non cada; non distrarti dal pilotaggio e dalla vista fuori. Verifica sempre AIP, NOTAM, carte e meteo ufficiali prima del volo.</p>
+<p><b>Nessuna garanzia.</b> L'app è fornita gratuitamente «così com'è», senza garanzie di alcun tipo, esplicite o implicite, di funzionamento, precisione o idoneità a uno scopo. Nei limiti consentiti dalla legge, l'autore declina ogni responsabilità per danni diretti o indiretti, a persone o cose, derivanti dall'uso o dall'impossibilità di usare l'app o i dati che mostra.</p>
+<p><b>Dati personali.</b> Posizione, rotte, campi e diario di volo restano sul telefono. Escono solo le richieste ai servizi di mappe, terreno e meteo (con la zona visualizzata) e le segnalazioni che invii tu.</p>`;
+
+PH.version=function(){ const b=window.IA517_BUILD||{version:'1.0.0',build:'dev',channel:'web'}; return b; };
+PH.versionHistory=function(){
+  const b=PH.version(), h=lsGet('ia517p_versions',[]);
+  if(!h.length || h[0].v!==b.version){ h.unshift({v:b.version,build:b.build,t:Date.now()}); lsSet('ia517p_versions',h.slice(0,20)); }
+  return h;
+};
+// controllo degli aggiornamenti (versioni pubblicate su GitHub)
+PH.checkUpdate=async function(manual){
+  const b=PH.version(), out={state:'?'};
+  try{
+    const r=await window.IA517.http(PH_INFO.releases);
+    if(r.status===404){ out.state='privato'; }
+    else if(r.status!==200){ out.state='errore'; out.msg='risposta '+r.status; }
+    else { const j=JSON.parse(r.text), n=parseInt(String(j.tag_name||'').replace(/\D+/g,''))||0, cur=parseInt(b.build)||0;
+      const apk=(j.assets||[]).find(a=>/\.apk$/i.test(a.name));
+      Object.assign(out,{state:n>cur?'nuova':'ok',latest:(j.name||j.tag_name||'').replace(/^I-A517 Strumento\s*/,''),build:n,url:apk?apk.browser_download_url:j.html_url,date:j.published_at,notes:j.body||''}); }
+  }catch(e){ out.state=navigator.onLine?'errore':'offline'; out.msg=e&&e.message; }
+  out.t=Date.now(); lsSet('ia517p_update',out);
+  if(out.state==='nuova' && !manual) toast('AGGIORNAMENTO DISPONIBILE · '+out.latest);
+  return out;
+};
+// registro degli errori, da allegare alle segnalazioni
+PH.errLog=lsGet('ia517p_errlog',[]);
+PH.logErr=function(msg){ PH.errLog.unshift(new Date().toISOString().slice(0,19)+' '+String(msg).slice(0,300)); PH.errLog=PH.errLog.slice(0,30); lsSet('ia517p_errlog',PH.errLog); };
+addEventListener('error',e=>PH.logErr((e.message||'errore')+' @'+(e.filename||'').split('/').pop()+':'+(e.lineno||'')));
+addEventListener('unhandledrejection',e=>PH.logErr('promise: '+(e.reason&&e.reason.message||e.reason)));
+PH.diag=function(){
+  const b=PH.version(), s=PH.status();
+  return [`Versione ${b.version} (build ${b.build}, ${b.channel})`, navigator.userAgent, `Schermo ${innerWidth}×${innerHeight} @${devicePixelRatio}`,
+    ...s.rows.map(r=>`${r[1]}: ${r[2]}`), `Errori di disegno: ${FRAME_ERR||0}${FRAME_LAST_ERR?' · ultimo: '+FRAME_LAST_ERR:''}`,
+    'Ultimi errori:', ...(PH.errLog.length?PH.errLog.slice(0,12):['nessuno'])].join('\n');
+};
+// segnalazioni: inviate per posta tramite FormSubmit; senza rete restano in coda e partono dopo
+PH.reports=lsGet('ia517p_reports',[]);
+PH.sendReport=async function(rep){
+  const body={_subject:`[I-A517 app] ${rep.kind}: ${rep.text.slice(0,60)}`,_template:'box',_captcha:'false',
+    tipo:rep.kind,messaggio:rep.text,rispondi_a:rep.reply||'(non indicato)',versione:PH.version().version,data:new Date(rep.t).toLocaleString('it-IT'),dati_tecnici:rep.diag||'(non allegati)'};
+  if(rep.reply) body._replyto=rep.reply;
+  const url='https://formsubmit.co/ajax/'+PH_INFO.mail;
+  let ok=false;
+  if(PH.native&&PH.native.http){ const r=await PH.native.http.post({url,headers:{'Content-Type':'application/json','Accept':'application/json'},data:body}); ok=r.status>=200&&r.status<300; }
+  else { const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json','Accept':'application/json'},body:JSON.stringify(body)}); ok=r.ok; }
+  if(!ok) throw new Error('il servizio non ha accettato la segnalazione');
+};
+PH.flushReports=async function(){
+  if(!PH.reports.length || !navigator.onLine) return;
+  const left=[];
+  for(const r of PH.reports){ try{ await PH.sendReport(r); }catch(e){ left.push(r); } }
+  if(left.length<PH.reports.length) toast('SEGNALAZIONE INVIATA');
+  PH.reports=left; lsSet('ia517p_reports',left);
+};
+addEventListener('online',()=>PH.flushReports());
+PH.mailto=function(rep){
+  return 'mailto:'+PH_INFO.mail+'?subject='+encodeURIComponent('[I-A517 app] '+rep.kind)+'&body='+encodeURIComponent(rep.text+'\n\n---\n'+(rep.diag||''));
+};
+
+// avvertenze da accettare al primo avvio (e quando cambiano)
+PH.terms=function(){
+  const a=lsGet('ia517p_terms',null); if(a && a.v>=PH_INFO.termsVersion) return;
+  const d=document.createElement('div'); d.className='ph-sheet ph-terms'; d.id='phTerms';
+  d.innerHTML=`<div class="ph-imp"><section><h3>Prima di usare l'app</h3>${PH_TERMS}
+    <label class="ph-chk"><input type="checkbox" id="phTermsOk"> Ho letto e accetto: uso l'app sotto la mia responsabilità, come ausilio e non come strumento primario.</label>
+    <div class="ph-btns"><button class="ph-btn pri" id="phTermsGo" disabled>Accetto e continuo</button></div></section></div>`;
+  document.body.appendChild(d);
+  el('phTermsOk').onchange=e=>{ el('phTermsGo').disabled=!e.target.checked; };
+  el('phTermsGo').onclick=()=>{ lsSet('ia517p_terms',{v:PH_INFO.termsVersion,t:Date.now(),ver:PH.version().version}); d.remove(); };
+};
+
+PH.renderInfo=function(){
+  const b=PH.version(), h=PH.versionHistory(), up=lsGet('ia517p_update',null), acc=lsGet('ia517p_terms',null);
+  const dt=t=>t?new Date(t).toLocaleDateString('it-IT',{day:'2-digit',month:'2-digit',year:'numeric'}):'—';
+  const upHtml=u=>{ if(!u) return '<p class="ph-sub">Non ancora controllato.</p>';
+    const when=`controllato il ${new Date(u.t).toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'})}`;
+    if(u.state==='nuova') return `<p><b class="ph-new">Disponibile la versione ${u.latest}</b> (${dt(u.date)})</p>${u.notes?`<p class="ph-sub">${u.notes.replace(/</g,'&lt;').slice(0,300)}</p>`:''}
+      <div class="ph-btns"><a class="ph-btn pri" href="${u.url}" target="_blank" rel="noopener">Scarica e installa</a></div><p class="ph-sub">Si installa sopra la versione attuale: rotte, campi, impostazioni e diario restano. ${when}.</p>`;
+    if(u.state==='ok') return `<p>✓ Hai l'ultima versione (${u.latest||b.version}). <span class="ph-sub">${when}</span></p>`;
+    if(u.state==='privato') return `<p class="ph-sub">Le versioni non sono ancora pubblicate in modo pubblico: il controllo automatico non può leggerle. ${when}.</p>`;
+    if(u.state==='offline') return `<p class="ph-sub">Senza internet: ricontrollo appena torna la rete. ${when}.</p>`;
+    return `<p class="ph-sub">Controllo non riuscito${u.msg?' ('+String(u.msg).replace(/</g,'')+')':''}. ${when}.</p>`; };
+  const box=el('phInfoBody');
+  box.innerHTML=`
+  <section class="ph-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><b>I-A517 Strumento di volo</b><span>${PH_INFO.author}</span></div></section>
+  <section><h3>Versione</h3>
+    <div class="ph-row"><span>Installata</span><small><b>${b.version}</b> · build ${b.build} · ${b.channel==='apk'?'app Android':'app dal browser'}</small></div>
+    <div class="ph-row"><span>Installata o aggiornata il</span><small>${dt(h[0]&&h[0].t)}</small></div>
+    ${h[1]?`<div class="ph-row"><span>Versione precedente</span><small>${h[1].v} · fino al ${dt(h[0].t)}</small></div>`:''}
+    <div class="ph-row"><span>Avvertenze accettate</span><small>${acc?dt(acc.t):'no'}</small></div>
+  </section>
+  <section><h3>Aggiornamenti</h3><div id="phUpd">${b.channel==='apk'?upHtml(up):'<p class="ph-sub">L\'app dal browser si aggiorna da sola: la nuova versione si carica al lancio successivo.</p>'}</div>
+    ${b.channel==='apk'?'<div class="ph-btns"><button class="ph-btn" id="phUpdGo">Controlla ora</button></div>':''}
+  </section>
+  <section><h3>Novità</h3>${PH_CHANGES.map(([v,t])=>`<div class="ph-row ph-col"><b>${v}</b><small>${t}</small></div>`).join('')}</section>
+  <section><h3>Segnala un problema o un'idea</h3>
+    <p class="ph-sub">Arriva per posta all'autore. Se sei in volo o senza rete resta in coda e parte da sola.</p>
+    <div class="ph-seg" id="phRepKind">${['Problema','Suggerimento','Dato sbagliato'].map((k2,i)=>`<button data-k="${k2}" aria-pressed="${i===0}">${k2}</button>`).join('')}</div>
+    <textarea id="phRepText" rows="5" placeholder="Cosa è successo, dove (campo, rotta), cosa ti aspettavi…"></textarea>
+    <label class="ph-fld">La tua email, se vuoi una risposta (facoltativa)<input id="phRepMail" type="email" inputmode="email" autocomplete="email" style="width:100%"></label>
+    <label class="ph-chk"><input type="checkbox" id="phRepDiag" checked> Allega i dati tecnici (versione, telefono, stato dei sensori, ultimi errori; nessuna posizione)</label>
+    <details><summary class="ph-sub">Vedi i dati tecnici</summary><pre class="ph-pre" id="phRepPre"></pre></details>
+    <div class="ph-btns"><button class="ph-btn pri" id="phRepSend">Invia segnalazione</button><a class="ph-btn" id="phRepMailto" href="#">Scrivi con l'app di posta</a></div>
+    <p class="ph-sub" id="phRepMsg">${PH.reports.length?PH.reports.length+' segnalazioni in coda.':''}</p>
+  </section>
+  <section><h3>Avvertenze e responsabilità</h3>${PH_TERMS}</section>
+  <section><h3>Crediti e licenze</h3>
+    <div class="ph-cred">
+      <p><b>Campi e piste</b>: OurAirports (pubblico dominio) e note del pilota.</p>
+      <p><b>Mappe</b>: © OpenStreetMap contributors (ODbL); OpenTopoMap (CC BY-SA); World Imagery © Esri, Vantor, Earthstar Geographics; IGM 1:25.000 e ortofoto AGEA dal Geoportale Nazionale (CC BY-SA).</p>
+      <p><b>Terreno</b>: Terrain Tiles su AWS Open Data (Mapzen, da SRTM, EU-DEM e altre fonti pubbliche).</p>
+      <p><b>Meteo</b>: Open-Meteo (CC BY 4.0); METAR e TAF da aviationweather.gov (NOAA).</p>
+      <p><b>Software</b>: Capacitor (MIT) con i plugin Filesystem, Share, Keep Awake, Text to Speech; segnalazioni via FormSubmit.</p>
+      <p><b>Progetto</b>: strumento di volo DIY da 80 mm per l'Avid Flyer I-A517.</p>
+    </div>
+  </section>
+  <section class="ph-donate"><h3>Ti è utile?</h3>
+    <p class="ph-sub">L'app è gratuita e senza pubblicità. Se vuoi contribuire alle spese (servizi, hardware per le prove), puoi offrire un caffè o quello che preferisci.</p>
+    <a class="ph-btn ph-paypal" href="${PH_INFO.paypal}" target="_blank" rel="noopener">♥ Dona con PayPal</a>
+  </section>`;
+  let kind='Problema';
+  el('phRepKind').querySelectorAll('button').forEach(x=>x.onclick=()=>{ kind=x.dataset.k; el('phRepKind').querySelectorAll('button').forEach(y=>y.setAttribute('aria-pressed',y===x)); });
+  el('phRepPre').textContent=PH.diag();
+  const rep=()=>({kind,text:el('phRepText').value.trim(),reply:el('phRepMail').value.trim(),diag:el('phRepDiag').checked?PH.diag():'',t:Date.now()});
+  el('phRepMailto').onclick=e=>{ e.currentTarget.href=PH.mailto(rep()); };
+  el('phRepSend').onclick=async()=>{
+    const r=rep(), m=el('phRepMsg');
+    if(r.text.length<5){ m.textContent='Scrivi due righe su cosa è successo.'; return; }
+    if(r.reply && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(r.reply)){ m.textContent='L\'email per la risposta non sembra valida.'; return; }
+    el('phRepSend').disabled=true; m.textContent='Invio…';
+    try{ await PH.sendReport(r); m.textContent='Inviata, grazie. '+(r.reply?'Ti risponderò a '+r.reply+'.':''); el('phRepText').value=''; }
+    catch(e){ PH.reports.push(r); lsSet('ia517p_reports',PH.reports); m.textContent='Non partita adesso ('+(navigator.onLine?'servizio non raggiungibile':'senza rete')+'): resta in coda e parte da sola.'; }
+    finally{ el('phRepSend').disabled=false; }
+  };
+  if(el('phUpdGo')) el('phUpdGo').onclick=async()=>{ el('phUpd').innerHTML='<p class="ph-sub">Controllo…</p>'; el('phUpd').innerHTML=upHtml(await PH.checkUpdate(true)); };
+};
+// avvio: avvertenze, storico versioni, controllo aggiornamenti una volta al giorno, coda segnalazioni
+(function(){
+  PH.versionHistory(); PH.terms();
+  const up=lsGet('ia517p_update',null);
+  if(PH.version().channel==='apk' && (!up || Date.now()-up.t>20*3600e3)) setTimeout(()=>PH.checkUpdate(false),8000);
+  setTimeout(()=>PH.flushReports(),5000);
 })();
 
 // ---------------- avvio ----------------

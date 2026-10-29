@@ -10,7 +10,8 @@ Orizzonte sintetico, mappa, rotte, circuito, piano di volo e meteo per l'Avid Fl
 - mappe dei servizi solo `http`, come l'IGM 1:25.000 e le ortofoto del Geoportale Nazionale.
 
 ## Compilazione
-Ogni push su `main` avvia GitHub Actions. L'APK finisce tra le **Release**, firmato sempre con la stessa chiave (`keystore/strumento.keystore`), così gli aggiornamenti si installano sopra senza perdere i dati.
+Ogni push su `main` avvia GitHub Actions. L'APK finisce tra le **Release**, firmato sempre con la stessa chiave, così gli aggiornamenti si installano sopra senza perdere i dati.
+La chiave è nel repository solo cifrata (`keystore/strumento.keystore.enc`); la password sta nel secret `KEYSTORE_PASSWORD` delle Actions. L'app controlla da sola l'ultima Release e propone l'aggiornamento (pagina Info).
 
 ## Aggiornare le pagine
 Le pagine si generano dai sorgenti dello strumento (`pfd.html`, `companion.html`) con `build_android.py`, poi `tools/prepare_www.py` le copia in `www/` aggiungendo il runtime di Capacitor.
