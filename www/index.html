@@ -1953,7 +1953,7 @@ PH={
   groundPitch:lsGet('ia517p_gpitch',0),
   geoid:lsGet('ia517p_geoid',47), altOfsBy:lsGet('ia517p_altofs2',{phone:lsGet('ia517p_altofs',0),glo:0}), altOfs:0, altCal:lsGet('ia517p_altcal',null),
   srcPref:lsGet('ia517p_src','auto'), src:null, phoneFix:null, glo:{port:null,fix:null,gga:null,want:lsGet('ia517p_glo',false),n:0,hz:0,err:''},
-  perf:{avg:0,max:0,n:0,stalls:0,lastRaf:0}, fps:lsGet('ia517p_fps',30), hbPrev:lsGet('ia517p_hb',null),
+  perf:{avg:0,max:0,n:0,stalls:0,lastRaf:0}, trail:[], fps:lsGet('ia517p_fps',30), hbPrev:lsGet('ia517p_hb',null),
   ahrs:new PhMahony(), vario:new PhVario(3), ahrsInit:false, smooth:lsGet('ia517p_smooth',3), attF:null, hdg:null, slipF:0, gsPrev:null, dvdt:0,
   aAvg:[0,0,0], windBuf:[], tas:null, still:0, stillBuf:[],
   voice:lsGet('ia517p_voice',true), vib:lsGet('ia517p_vib',true), wake:null, wakeOn:lsGet('ia517p_wake',true),
@@ -2709,10 +2709,15 @@ function frame(now){
     try{ if(ctx.reset) ctx.reset(); ctx.setTransform(1,0,0,1,0,0);
       ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); failBox(CX,CY,R*0.7,R*0.2,'ERRORE DI VISUALIZZAZIONE','riprovo · '+FRAME_LAST_ERR.slice(0,40)); }catch(e2){} }
   if(PH){ const P=PH.perf, d=performance.now()-t0; P.avg+=(d-P.avg)*0.05; if(d>P.max) P.max=d; P.n++;
-    if(now-(P.hbT||0)>3000){ P.hbT=now; lsSet('ia517p_hb',{t:Date.now(),page:PAGE,zoom:ZOOMS[zi],base:PH.base,ms:Math.round(P.avg),max:Math.round(P.max),stalls:P.stalls}); P.max=0; } }
+    if(now-(P.hbT||0)>1000){ P.hbT=now; lsSet('ia517p_hb',{t:Date.now(),page:PAGE,zoom:ZOOMS[zi],base:PH.base,ms:Math.round(P.avg),max:Math.round(P.max),stalls:P.stalls,menu:!menuEl.hidden,prompt:!!PROMPT,demo:PH.demo,dem:PH.dem.size,tl:PH.tilesLoading||0,trail:PH.trail.slice(-15)}); P.max=0; } }
 }
+PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeString().slice(0,8)+' '+a); if(PH.trail.length>30) PH.trail.splice(0,PH.trail.length-30); };
 // ---- avvio della parte telefono ----
 (function(){
+  { const tp=togglePage; togglePage=function(){ tp(); PH.act('pagina '+PAGE); }; }
+  { const ro_=rotate; rotate=function(d){ PH.act('ruota '+d+(PAGE==='map'?' (zoom)':'')); return ro_(d); }; }
+  { const pu_=push; push=function(){ PH.act('premi'); return pu_(); }; }
+  { const sh=PH.show; PH.show=function(v){ PH.act('apri '+v); return sh(v); }; }
   document.body.classList.add('phone');
   PH.splitOn=lsGet('ia517p_split',true);
   // seconda vista (tablet in orizzontale)
@@ -2733,7 +2738,7 @@ function frame(now){
   // zoom della mappa: 19 passi da 1 a 700 km (tutto il Nord Italia), ricordato
   ZOOMS.splice(0,ZOOMS.length,1,2,3,4,6,8,11,15,22,30,45,60,90,125,180,250,350,500,700);
   zi=clamp(lsGet('ia517p_zoom',5)|0,0,ZOOMS.length-1); PH.ziSaved=zi;
-  PH.zoomStep=function(d){ const nz=clamp(zi+d,0,ZOOMS.length-1); if(nz===zi){ toastShow(d<0?'ZOOM MASSIMO':'ZOOM MINIMO'); return; } zi=nz; MR.zi=-1; toastShow('ZOOM '+ZOOMS[zi]+' km'); };
+  PH.zoomStep=function(d){ PH.act('zoom '+(d<0?'+':'−')); const nz=clamp(zi+d,0,ZOOMS.length-1); if(nz===zi){ toastShow(d<0?'ZOOM MASSIMO':'ZOOM MINIMO'); return; } zi=nz; MR.zi=-1; toastShow('ZOOM '+ZOOMS[zi]+' km'); };
   // gesti sullo strumento: tocco = premi, trascina in orizzontale = ruota, tieni premuto = pagina, due dita = zoom
   const cvm=el('pfd'), cvz=el('pfd2'); let g0=null;
   const pts=new Map(), mapOn=cv=>cv===cvm?PAGE==='map':PAGE==='pfd';
@@ -2807,6 +2812,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.8','Scatola nera: l\'app ricorda ultimo stato e ultime azioni; dopo un blocco, alla riapertura, li alleghi alla segnalazione da Info.'],
   ['1.0.7','Zoom della mappa fino a 700 km (tutto il Nord Italia): 19 scale da 1 a 700 km. Oltre 60 km i campi diventano puntini e restano scritti solo gli aeroporti; il terreno usa tessere più leggere e si scarica anche per il volo senza internet.'],
   ['1.0.6','Corretto il blocco nel passaggio fra mappa e orizzonte; app più leggera (30 fotogrammi al secondo, terreno ricalcolato meno spesso). Zoom della mappa con due dita, con i pulsanti + e − e con 12 scale da 1 a 60 km. Orizzonte più morbido, regolabile in Impostazioni › Montaggio. A terra la mappa non si colora più di rosso.'],
   ['1.0.5','Licenza: © Enrico D\'Amico, tutti i diritti riservati. È nelle avvertenze, da riaccettare una volta, e nella pagina Info con il testo completo e le librerie di terze parti.'],
@@ -2852,7 +2858,8 @@ PH.diag=function(){
   return [`Versione ${b.version} (build ${b.build}, ${b.channel})`, navigator.userAgent, `Schermo ${innerWidth}×${innerHeight} @${devicePixelRatio}`,
     ...s.rows.map(r=>`${r[1]}: ${r[2]}`), `Errori di disegno: ${FRAME_ERR||0}${FRAME_LAST_ERR?' · ultimo: '+FRAME_LAST_ERR:''}`,
     `Disegno: ${PH.perf.avg.toFixed(1)} ms per fotogramma · ${PH.fps} al secondo · blocchi ${PH.perf.stalls}`,
-    `Sessione precedente, ultimo stato: ${PH.hbPrev?new Date(PH.hbPrev.t).toLocaleString('it-IT')+' · pagina '+PH.hbPrev.page+' · zoom '+PH.hbPrev.zoom+' km · mappa '+PH.hbPrev.base+' · '+PH.hbPrev.ms+' ms (max '+PH.hbPrev.max+') · blocchi '+PH.hbPrev.stalls:'—'}`,
+    `Sessione precedente, ultimo stato: ${PH.hbPrev?new Date(PH.hbPrev.t).toLocaleString('it-IT')+' · pagina '+PH.hbPrev.page+' · zoom '+PH.hbPrev.zoom+' km · mappa '+PH.hbPrev.base+' · '+PH.hbPrev.ms+' ms (max '+PH.hbPrev.max+') · blocchi '+PH.hbPrev.stalls+(PH.hbPrev.menu?' · menu aperto':'')+(PH.hbPrev.prompt?' · domanda a schermo':'')+' · terreno '+PH.hbPrev.dem+' · tessere in arrivo '+PH.hbPrev.tl:'—'}`,
+    'Ultime azioni della sessione precedente:', ...((PH.hbPrev&&PH.hbPrev.trail&&PH.hbPrev.trail.length)?PH.hbPrev.trail:['—']),
     'Ultimi errori:', ...(PH.errLog.length?PH.errLog.slice(0,12):['nessuno'])].join('\n');
 };
 // segnalazioni: inviate per posta tramite FormSubmit; senza rete restano in coda e partono dopo

@@ -92,12 +92,15 @@ if ws:
     rc=json.loads(ev("JSON.stringify((()=>{const r=document.getElementById('pfd').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,devicePixelRatio]})())"))
     x,y=int(rc[0]*rc[2]),int(rc[1]*rc[2])
     for i in range(6):
-        adb("shell","input","swipe",str(x),str(y),str(x+90),str(y+10),"1300"); time.sleep(3)
+        if i%2==0: adb("shell","input","swipe",str(x),str(y),str(x),str(y),"1100")      # tocco lungo fermo
+        else:      adb("shell","input","swipe",str(x),str(y),str(x+4),str(y+3),"2200")  # tocco lungo, poi il dito scivola a fine pressione
+        time.sleep(3)
         log(f"tocco lungo {i+1}", [ev("PAGE"), ev("ZOOMS[zi]"), alive(), round(ev("__gap") or 0)])
         if i in (0,3): shot(f"07{'ab'[i//3]}_pagina_{ev('PAGE')}")
     for i in range(6):
         ev("document.getElementById('phPage').click(),1"); time.sleep(2)
         log(f"pulsante PAGINA {i+1}", [ev("PAGE"), alive(), round(ev("__gap") or 0)])
+    log("scatola nera", ev("JSON.stringify(PH.trail.slice(-12))"))
     log("prestazioni", ev("JSON.stringify({ms:PH.perf.avg.toFixed(1),blocchi:PH.perf.stalls,fps:PH.fps,vicini:PH.nearF&&PH.nearF.length,terreno:PH.dem.size,tessere:PH.tiles.size})"))
     step("08_demo", "(typeof PH.setDemo==='function'?(PH.setDemo(true),'demo'):'manca setDemo')", pause=25)
     log("errori JS", ev("JSON.stringify(__err)"))
