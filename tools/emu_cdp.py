@@ -87,9 +87,25 @@ if ws:
     step("05_piano", "PH.show('piano'),'ok'", pause=8)
     step("06_info", "PH.show('info'),'ok'", pause=4)
     step("07_volo", "PH.show('volo'),'ok'")
+    # cambi di pagina come li fa il pilota: tocco lungo sullo strumento (il dito scivola un po'), poi il pulsante PAGINA
+    ev("window.__gap=0;window.__lt=0;(function f(t){ if(__lt&&t-__lt>__gap) __gap=t-__lt; __lt=t; requestAnimationFrame(f); })(performance.now());1")
+    rc=json.loads(ev("JSON.stringify((()=>{const r=document.getElementById('pfd').getBoundingClientRect();return [r.x+r.width/2,r.y+r.height/2,devicePixelRatio]})())"))
+    x,y=int(rc[0]*rc[2]),int(rc[1]*rc[2])
+    for i in range(6):
+        adb("shell","input","swipe",str(x),str(y),str(x+90),str(y+10),"1300"); time.sleep(3)
+        log(f"tocco lungo {i+1}", [ev("PAGE"), ev("ZOOMS[zi]"), alive(), round(ev("__gap") or 0)])
+        if i in (0,3): shot(f"07{'ab'[i//3]}_pagina_{ev('PAGE')}")
+    for i in range(6):
+        ev("document.getElementById('phPage').click(),1"); time.sleep(2)
+        log(f"pulsante PAGINA {i+1}", [ev("PAGE"), alive(), round(ev("__gap") or 0)])
+    log("prestazioni", ev("JSON.stringify({ms:PH.perf.avg.toFixed(1),blocchi:PH.perf.stalls,fps:PH.fps,vicini:PH.nearF&&PH.nearF.length,terreno:PH.dem.size,tessere:PH.tiles.size})"))
     step("08_demo", "(typeof PH.setDemo==='function'?(PH.setDemo(true),'demo'):'manca setDemo')", pause=25)
     log("errori JS", ev("JSON.stringify(__err)"))
     log("errori app", ev("JSON.stringify(PH.errLog||[])"))
+    ev("PH.setDemo(false),1"); time.sleep(2)
+    for i in range(4):
+        ev("document.getElementById('phPage').click(),1"); time.sleep(3)
+        log(f"senza demo, PAGINA {i+1}", [ev("PAGE"), alive(), round(ev("__gap") or 0)])
     log("memoria", ev("performance.memory?Math.round(performance.memory.usedJSHeapSize/1e6)+' MB':'n.d.'"))
 
 # orizzontale (tablet)

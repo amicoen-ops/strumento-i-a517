@@ -167,6 +167,14 @@
   .ph-donate{align-items:center;text-align:center}
   .ph-paypal{background:#ffc439!important;border-color:#ffc439!important;color:#111!important;font-weight:700!important;min-height:52px!important;padding:0 26px!important;border-radius:26px!important;justify-content:center}
   .ph-terms{z-index:40} .ph-terms .ph-imp{padding-top:max(16px,env(safe-area-inset-top,0px))}
+
+  /* zoom della mappa */
+  .ph-zoom{position:absolute;right:4%;bottom:4%;display:flex;flex-direction:column;gap:10px;z-index:6}
+  .ph-zoom button{width:52px;height:52px;border-radius:14px;border:1px solid rgba(255,255,255,.28);background:rgba(7,8,10,.72);
+    color:#f2f4f7;font:700 28px/1 system-ui,sans-serif;touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+  .ph-zoom button:active{background:rgba(255,255,255,.22)}
+  .ph-range{display:flex;flex-direction:column;gap:6px;width:100%}
+  .ph-range input{width:100%;accent-color:#ff4fd8}
 </style>
 
 <h1>Orizzonte Sintetico</h1>
@@ -1764,7 +1772,7 @@ function learnPropose(seg,kind){
 //  in virata con la velocità GPS). Da internet: terreno vero (DEM), mappa di base, meteo.
 //  Le funzioni dichiarate qui sostituiscono quelle con lo stesso nome dello strumento.
 // =====================================================================================
-var PH=null;
+var PH=null, PH_nearFields=null;
 
 // chiavi di memoria: le note dello strumento non devono sovrascrivere quelle del piano
 function phKey(k){ return k==='ia517_notes'?'ia517pfd_notes':k; }
@@ -1811,6 +1819,18 @@ async function phDemFetch(z,x,y){
   finally{ PH.demPend.delete(key); }
 }
 
+// a terra niente colori di avviso del terreno (giallo e rosso): solo in volo o nel volo dimostrativo
+function PH_air(){ return !PH || PH.demo || S.auto || !!PH.flight || (S.gpsReal && S.gs>45); }
+function terrain(E,N){
+  let z=terrainRaw(E,N);
+  const L=(PH&&PH.nearF)||FIELDS;
+  for(let i=0;i<L.length;i++){ const f=L[i], dx=E-f.E, dy=N-f.N, lim=f.flat*2.2;
+    if(dx>lim||dx<-lim||dy>lim||dy<-lim) continue;
+    const w=Math.exp(-(dx*dx+dy*dy)/(f.flat*f.flat)); z+=(f.elev-z)*w; }
+  return z;
+}
+PH_nearFields=function(){ if(!PH) return; const ac=enu(S.lat,S.lon), r=Math.max(30000,ZOOMS[zi]*1500), r2=r*r;
+  PH.nearF=FIELDS.filter(f=>{ const dx=f.E-ac.E, dy=f.N-ac.N; return dx*dx+dy*dy<r2; }); };
 // vista sintetica: come quella dello strumento, ma dove il terreno non è noto non disegna niente
 function drawTerrain(ac,acAlt,hdgRad,sinP,cosP){
   const sinH=Math.sin(hdgRad), cosH=Math.cos(hdgRad), FN=30, LN=48;
@@ -1825,7 +1845,7 @@ function drawTerrain(ac,acAlt,hdgRad,sinP,cosP){
       if(!ok) continue;
       const wa=toW(f0,(l0+l1)/2), wb=toW(f1,(l0+l1)/2), zc=zs/4;
       let slope=(terrain(wb.E,wb.N)-terrain(wa.E,wa.N))/(f1-f0); if(slope!==slope) slope=0;
-      const wc=toW((f0+f1)/2,(l0+l1)/2), clr=tawsInhibit(wc.E,wc.N)?1e9:acAlt-zc;
+      const wc=toW((f0+f1)/2,(l0+l1)/2), clr=(!PH_air()||tawsInhibit(wc.E,wc.N))?1e9:acAlt-zc;
       const [r,g,b]=tawsRGB(zc,1-slope*2.4,clr);
       ctx.fillStyle=`rgb(${r|0},${g|0},${b|0})`;
       ctx.beginPath(); ctx.moveTo(pts[0].x,pts[0].y); for(let m=1;m<4;m++) ctx.lineTo(pts[m].x,pts[m].y);
@@ -1837,17 +1857,20 @@ function drawTerrain(ac,acAlt,hdgRad,sinP,cosP){
 }
 // mappa: rilievo dal DEM; con la mappa di base accesa restano solo le zone TAWS gialle e rosse
 function rasterMap(ac){
+  if(PH){ const now=performance.now();
+    if(MR.zi===zi && MR.half>0 && now-(PH.rastT||0)<1500) return;
+    PH.rastT=now; }
   const n=MR.n, half=ZOOMS[zi]*1000*1.4, acAlt=S.alt*FT2M, base=PH&&PH.base!=='dem';
-  if(PH) PH.demZ=zi>=5?9:(zi>=4?10:11);
+  if(PH){ const km=ZOOMS[zi]; PH.demZ=km>=30?9:(km>=15?10:(km<=3?12:11)); }
   MR.cv.width=n; MR.cv.height=n; const c2=MR.cv.getContext('2d'), img=c2.createImageData(n,n);
-  const z=new Float32Array(n*n), st=2*half/n;
+  const z=new Float32Array(n*n), st=2*half/n, air=PH_air();
   for(let j=0;j<n;j++) for(let i=0;i<n;i++) z[j*n+i]=terrain(ac.E-half+(i+0.5)*st, ac.N+half-(j+0.5)*st);
   for(let j=0;j<n;j++) for(let i=0;i<n;i++){
     const zz=z[j*n+i], o=(j*n+i)*4;
     if(zz!==zz){ img.data[o+3]=0; continue; }
     let zl=z[j*n+Math.max(0,i-1)], zu=z[Math.max(0,j-1)*n+i]; if(zl!==zl) zl=zz; if(zu!==zu) zu=zz;
     const sh=1+clamp(((zl-zz)+(zu-zz))/st*2.2,-0.45,0.35);
-    const E=ac.E-half+(i+0.5)*st, N=ac.N+half-(j+0.5)*st, inh=tawsInhibit(E,N), clr=inh?1e9:acAlt-zz;
+    const E=ac.E-half+(i+0.5)*st, N=ac.N+half-(j+0.5)*st, inh=!air||tawsInhibit(E,N), clr=inh?1e9:acAlt-zz;
     const [r,g,b]=tawsRGB(zz,sh,clr,true);
     img.data[o]=r; img.data[o+1]=g; img.data[o+2]=b;
     img.data[o+3]=base?(clr<TAWS_RED?210:(clr<TAWS_YEL?150:0)):255;
@@ -1927,7 +1950,8 @@ PH={
   groundPitch:lsGet('ia517p_gpitch',0),
   geoid:lsGet('ia517p_geoid',47), altOfsBy:lsGet('ia517p_altofs2',{phone:lsGet('ia517p_altofs',0),glo:0}), altOfs:0, altCal:lsGet('ia517p_altcal',null),
   srcPref:lsGet('ia517p_src','auto'), src:null, phoneFix:null, glo:{port:null,fix:null,gga:null,want:lsGet('ia517p_glo',false),n:0,hz:0,err:''},
-  ahrs:new PhMahony(), vario:new PhVario(3), ahrsInit:false, hdg:null, slipF:0, gsPrev:null, dvdt:0,
+  perf:{avg:0,max:0,n:0,stalls:0,lastRaf:0}, fps:lsGet('ia517p_fps',30), hbPrev:lsGet('ia517p_hb',null),
+  ahrs:new PhMahony(), vario:new PhVario(3), ahrsInit:false, smooth:lsGet('ia517p_smooth',3), attF:null, hdg:null, slipF:0, gsPrev:null, dvdt:0,
   aAvg:[0,0,0], windBuf:[], tas:null, still:0, stillBuf:[],
   voice:lsGet('ia517p_voice',true), vib:lsGet('ia517p_vib',true), wake:null, wakeOn:lsGet('ia517p_wake',true),
   wx:{}, flight:null, alerts:{}, lastSec:0, lastHalf:0, split:false, view2:null, sunDay:'', sun:null,
@@ -1968,12 +1992,13 @@ PH.level=function(groundPitchDeg){
   const th=(groundPitchDeg||0)*D2R, c=Math.cos(th), s=Math.sin(th);
   const fwd=[fw[0]*c-dn[0]*s, fw[1]*c-dn[1]*s, fw[2]*c-dn[2]*s], down=[dn[0]*c+fw[0]*s, dn[1]*c+fw[1]*s, dn[2]*c+fw[2]*s];
   const right=[down[1]*fwd[2]-down[2]*fwd[1], down[2]*fwd[0]-down[0]*fwd[2], down[0]*fwd[1]-down[1]*fwd[0]];
-  PH.M=[fwd,right,down]; PH.mountCal=true; PH.groundPitch=groundPitchDeg||0;
+  PH.M=[fwd,right,down]; PH.mountCal=true; PH.attF=null; PH.groundPitch=groundPitchDeg||0;
   lsSet('ia517p_mount',PH.M); lsSet('ia517p_gpitch',PH.groundPitch);
   const fb=PH.toBody(a).map(x=>x/9.80665); PH.ahrs.levelFrom(fb[0],fb[1],fb[2]);   // forza specifica in g
   toast('ASSETTO LIVELLATO'+(PH.groundPitch?` · A TERRA ${PH.groundPitch}°`:''));
   return true;
 };
+PH.smoothTxt=function(){ const v=PH.smooth; return v<=0?'immediato':(v/10).toFixed(1).replace('.',',')+' s'; };
 PH.resetMount=function(){ PH.M=[[0,0,-1],[1,0,0],[0,-1,0]]; PH.mountCal=false; try{ localStorage.removeItem('ia517p_mount'); }catch(e){} PH.ahrsInit=false; toast('MONTAGGIO: TELEFONO VERTICALE'); };
 
 // ---- sensori di movimento ----
@@ -1989,13 +2014,18 @@ PH.onMotion=function(e){
   const fb=PH.toBody(av).map(x=>x/9.80665);               // forza specifica nel corpo, in g (fermo e livellato: 0,0,-1)
   const wd=r?[(r.beta||0)*D2R,(r.gamma||0)*D2R,(r.alpha||0)*D2R]:[0,0,0];
   const wb=PH.toBody(wd);
-  if(!PH.ahrsInit){ PH.ahrs.levelFrom(fb[0],fb[1],fb[2]); PH.ahrsInit=true; PH.hdg=S.trk!=null?S.trk:S.hdg; }
+  if(!PH.ahrsInit){ PH.ahrs.levelFrom(fb[0],fb[1],fb[2]); PH.ahrsInit=true; PH.attF=null; PH.hdg=S.trk!=null?S.trk:S.hdg; }
   // compensazione di virata e accelerazione con la velocità GPS (come la scheda sensori con il Pitot)
   const V=(S.gpsReal && S.gs>15)?(PH.tas||S.gs/3.6):0;
   const fx=fb[0]-(V>0?PH.dvdt/9.80665:0), fy=fb[1]-wb[2]*V/9.80665, fz=fb[2]+wb[1]*V/9.80665;
   PH.ahrs.update(wb[0],wb[1],wb[2],fx,fy,fz,dt);
   const [ro,pi]=PH.ahrs.euler();
-  S.roll=ro; S.pitch=pi;
+  // orizzonte più morbido: filtro del primo ordine regolabile (0 = immediato, 10 = 1 s)
+  const tau=clamp(PH.smooth,0,10)*0.1, kf=tau>0?1-Math.exp(-dt/tau):1;
+  if(!PH.attF || !(PH.attF[0]===PH.attF[0])) PH.attF=[ro,pi];
+  PH.attF[0]+=angDiff(ro,PH.attF[0])*kf; if(PH.attF[0]>180) PH.attF[0]-=360; else if(PH.attF[0]<-180) PH.attF[0]+=360;
+  PH.attF[1]+=(pi-PH.attF[1])*kf;
+  S.roll=PH.attF[0]; S.pitch=PH.attF[1];
   PH.slipF+=(-fb[1]-PH.slipF)*Math.min(1,dt*3); S.slip=clamp(PH.slipF,-1,1);
   // prua: giroscopio tra un fix e l'altro
   const phi=ro*D2R, th=pi*D2R, psiDot=(wb[1]*Math.sin(phi)+wb[2]*Math.cos(phi))/Math.max(0.2,Math.cos(th));
@@ -2441,8 +2471,9 @@ PH.info=function(g){
 PH.afterFrame=function(g,dt){
   PH.drawSplit(g);
   const now=performance.now();
-  if(now-PH.lastHalf>500){ PH.lastHalf=now; try{ PH.info(g); }catch(e){} }
+  if(now-PH.lastHalf>500){ PH.lastHalf=now; try{ PH.info(g); }catch(e){} try{ PH.zoomBtns&&PH.zoomBtns(); }catch(e){} if(zi!==PH.ziSaved){ PH.ziSaved=zi; lsSet('ia517p_zoom',zi); } }
   if(now-PH.lastSec>1000){ PH.lastSec=now;
+    try{ PH_nearFields(); }catch(e){}
     try{ PH.applyForecast(); PH.checkTerrain(); PH.checkAirspace(); PH.checkSun(); }catch(e){ console.error(e); }
     if(PH.demVer!==PH.demVerSeen && now-(PH.demRast||0)>1500){ PH.demVerSeen=PH.demVer; PH.demRast=now; MR.zi=-1; PH.fieldElev(); }
   }
@@ -2488,6 +2519,10 @@ PH.renderImp=function(){
     <p class="ph-sub">Di serie il telefono è verticale, schermo verso di te, in verticale o orizzontale. Se è montato in un altro modo, o per togliere l'errore di beccheggio, livella: in volo rettilineo e livellato, oppure a terra indicando di quanto è cabrato l'aereo fermo (biciclo come l'Avid: circa 10–12°).</p>
     <div class="ph-btns"><button class="ph-btn pri" id="phLevelAir">Livella ora (in volo, ali livellate)</button></div>
     <div class="ph-btns"><label class="ph-fld">Assetto a terra (°)<input id="phGp" type="number" step="0.5" value="${PH.groundPitch||11}"></label><button class="ph-btn" id="phLevelGnd">Livella a terra</button><button class="ph-btn" id="phMountReset">Telefono verticale</button></div>
+    <label class="ph-fld ph-range"><span>Orizzonte più morbido: <b id="phSmV">${PH.smoothTxt()}</b></span><input id="phSm" type="range" min="0" max="10" step="1" value="${PH.smooth}"></label>
+    <div class="ph-row"><span>Fotogrammi al secondo</span></div>
+    <div class="ph-seg" id="phFps">${[[30,'30 · consuma meno'],[60,'60 · più fluido']].map(([v,l])=>`<button data-f="${v}" aria-pressed="${PH.fps===v}">${l}</button>`).join('')}</div>
+    <p class="ph-sub">Più morbido toglie il tremolio di vibrazioni e movimenti della mano, ma l'orizzonte arriva un po' dopo il movimento vero. In volo va bene 2–4; 0 è la risposta immediata.</p>
   </section>
   <section><h3>Quota GPS</h3>
     <p class="ph-sub">Il telefono non ha il barometro: la quota è quella GPS (±10–30 m), riportata al livello del mare con il geoide e tarata da sola quando sei fermo su un campo di quota nota. Non usarla al posto dell'altimetro.</p>
@@ -2525,6 +2560,8 @@ PH.renderImp=function(){
   if(el('phGloOn')) el('phGloOn').onclick=async()=>{ el('phGloMsg').textContent='Scegli il GLO 2 nell\'elenco…'; const ok=await PH.gloConnect(true);
     PH.renderImp(); el('phGloMsg').textContent=ok?'GLO 2 collegato.':('Non collegato: '+(PH.glo.err||'annullato')); };
   if(el('phGloOff')) el('phGloOff').onclick=async()=>{ await PH.gloClose(true); PH.renderImp(); };
+  el('phFps').querySelectorAll('button').forEach(b=>b.onclick=()=>{ PH.fps=+b.dataset.f; lsSet('ia517p_fps',PH.fps); el('phFps').querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); });
+  el('phSm').oninput=e=>{ PH.smooth=+e.target.value; lsSet('ia517p_smooth',PH.smooth); el('phSmV').textContent=PH.smoothTxt(); };
   el('phLevelAir').onclick=()=>{ if(PH.level(0)) stat(); };
   el('phLevelGnd').onclick=()=>{ if(PH.level(+el('phGp').value||0)) stat(); };
   el('phMountReset').onclick=()=>{ PH.resetMount(); stat(); };
@@ -2654,6 +2691,23 @@ PH.gloLine=function(line){
   if(PH.useGlo()) PH.applyFix(fx);
 };
 
+// ---- fotogrammi: tetto ai fotogrammi al secondo, misura del tempo di disegno, registro dei blocchi ----
+function frame(now){
+  requestAnimationFrame(frame);
+  if(PH){ const P=PH.perf;
+    if(P.lastRaf && !document.hidden && now-P.lastRaf>1500){ P.stalls++; PH.logErr&&PH.logErr(`blocco ${Math.round(now-P.lastRaf)} ms · pagina ${PAGE} · zoom ${ZOOMS[zi]} km · mappa ${PH.base} · terreno ${PH.dem.size} · tessere in arrivo ${PH.tilesLoading||0}`); }
+    P.lastRaf=now;
+    if(now-(P.lastDraw||0)<1000/PH.fps-3) return;
+    P.lastDraw=now; }
+  const t0=performance.now();
+  try{ frameBody(now); FRAME_OK=now; }
+  catch(e){ FRAME_ERR++; FRAME_LAST_ERR=String(e&&e.message||e);
+    if(FRAME_ERR%120===1) console.error('fotogramma', e);
+    try{ if(ctx.reset) ctx.reset(); ctx.setTransform(1,0,0,1,0,0);
+      ctx.fillStyle='#000'; ctx.fillRect(0,0,W,H); failBox(CX,CY,R*0.7,R*0.2,'ERRORE DI VISUALIZZAZIONE','riprovo · '+FRAME_LAST_ERR.slice(0,40)); }catch(e2){} }
+  if(PH){ const P=PH.perf, d=performance.now()-t0; P.avg+=(d-P.avg)*0.05; if(d>P.max) P.max=d; P.n++;
+    if(now-(P.hbT||0)>3000){ P.hbT=now; lsSet('ia517p_hb',{t:Date.now(),page:PAGE,zoom:ZOOMS[zi],base:PH.base,ms:Math.round(P.avg),max:Math.round(P.max),stalls:P.stalls}); P.max=0; } }
+}
 // ---- avvio della parte telefono ----
 (function(){
   document.body.classList.add('phone');
@@ -2673,11 +2727,32 @@ PH.gloLine=function(line){
   el('phOK').addEventListener('pointerup',()=>{ clearTimeout(okT); if(!okLong) push(); });
   ['pointerleave','pointercancel'].forEach(ev=>el('phOK').addEventListener(ev,()=>clearTimeout(okT)));
   el('phPage').addEventListener('click',()=>{ closeMenu(); togglePage(); toast(PAGE==='pfd'?'ORIZZONTE':'MAPPA'); });
-  // gesti sullo strumento: tocco = premi, trascina in orizzontale = ruota, tieni premuto = pagina
-  const cvm=el('pfd'); let g0=null;
-  cvm.addEventListener('pointerdown',e=>{ g0={x:e.clientX,y:e.clientY,t:performance.now(),acc:0,moved:false,long:false};
+  // zoom della mappa: 12 passi da 1 a 60 km, ricordato
+  ZOOMS.splice(0,ZOOMS.length,1,2,3,4,6,8,11,15,22,30,45,60);
+  zi=clamp(lsGet('ia517p_zoom',5)|0,0,ZOOMS.length-1); PH.ziSaved=zi;
+  PH.zoomStep=function(d){ const nz=clamp(zi+d,0,ZOOMS.length-1); if(nz===zi){ toastShow(d<0?'ZOOM MASSIMO':'ZOOM MINIMO'); return; } zi=nz; MR.zi=-1; toastShow('ZOOM '+ZOOMS[zi]+' km'); };
+  // gesti sullo strumento: tocco = premi, trascina in orizzontale = ruota, tieni premuto = pagina, due dita = zoom
+  const cvm=el('pfd'), cvz=el('pfd2'); let g0=null;
+  const pts=new Map(), mapOn=cv=>cv===cvm?PAGE==='map':PAGE==='pfd';
+  [cvm,cvz].forEach(cv=>{
+    cv.addEventListener('pointerdown',e=>{ pts.set(e.pointerId,[e.clientX,e.clientY]);
+      if(pts.size===2){ const [a,b]=[...pts.values()]; PH.pinch={d0:Math.hypot(a[0]-b[0],a[1]-b[1])||1,cv,warned:false}; if(g0){ clearTimeout(g0.lt); g0=null; } } });
+    cv.addEventListener('pointermove',e=>{ if(!pts.has(e.pointerId)) return; pts.set(e.pointerId,[e.clientX,e.clientY]);
+      const P=PH.pinch; if(!P || pts.size<2) return;
+      const [a,b]=[...pts.values()], d=Math.hypot(a[0]-b[0],a[1]-b[1]), r=d/P.d0;
+      if(r>1.22||r<0.82){ if(mapOn(P.cv)) PH.zoomStep(r>1?-1:1); else if(!P.warned){ P.warned=true; toastShow('ZOOM: SULLA MAPPA · TIENI PREMUTO PER CAMBIARE PAGINA'); } P.d0=d; } });
+    ['pointerup','pointercancel'].forEach(t=>cv.addEventListener(t,e=>{ pts.delete(e.pointerId); if(!pts.size) PH.pinch=null; }));
+    let wT=0; cv.addEventListener('wheel',e=>{ if(!mapOn(cv)) return; e.preventDefault(); const now=performance.now(); if(now-wT<120) return; wT=now; PH.zoomStep(e.deltaY>0?1:-1); },{passive:false});
+  });
+  const zb=document.createElement('div'); zb.className='ph-zoom'; zb.id='phZoom'; zb.hidden=true;
+  zb.innerHTML='<button type="button" id="phZin" aria-label="Zoom avanti">+</button><button type="button" id="phZout" aria-label="Zoom indietro">−</button>';
+  el('unit').appendChild(zb);
+  rep(el('phZin'),()=>PH.zoomStep(-1)); rep(el('phZout'),()=>PH.zoomStep(1));
+  PH.zoomBtns=function(){ const host=PAGE==='map'?el('unit'):(PH.split?el('unit2'):null);
+    if(host && zb.parentNode!==host) host.appendChild(zb); zb.hidden=!host; };
+  cvm.addEventListener('pointerdown',e=>{ if(pts.size>1) return; g0={x:e.clientX,y:e.clientY,t:performance.now(),acc:0,moved:false,long:false};
     g0.lt=setTimeout(()=>{ if(g0&&!g0.moved){ g0.long=true; closeMenu(); togglePage(); toast(PAGE==='pfd'?'ORIZZONTE':'MAPPA'); } },700); });
-  cvm.addEventListener('pointermove',e=>{ if(!g0) return; const dx=e.clientX-g0.x;
+  cvm.addEventListener('pointermove',e=>{ if(!g0||PH.pinch||g0.long) return; const dx=e.clientX-g0.x;
     if(Math.abs(dx)>12||Math.abs(e.clientY-g0.y)>12) g0.moved=true;
     const steps=Math.trunc((dx-g0.acc)/42); if(steps){ for(let i=0;i<Math.abs(steps);i++) rotate(Math.sign(steps)); g0.acc+=steps*42; } });
   cvm.addEventListener('pointerup',()=>{ if(!g0) return; clearTimeout(g0.lt); if(!g0.moved&&!g0.long) push(); g0=null; });
@@ -2702,7 +2777,7 @@ PH.gloLine=function(line){
   addEventListener('devicemotion',PH.onMotion);
   if(navigator.geolocation) navigator.geolocation.watchPosition(PH.onPos,PH.onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   else PH.gpsErr='GPS non disponibile';
-  PH.wakeLock(); document.addEventListener('visibilitychange',()=>{ if(!document.hidden) PH.wakeLock(); });
+  PH.wakeLock(); document.addEventListener('visibilitychange',()=>{ PH.perf.lastRaf=0; if(!document.hidden) PH.wakeLock(); });
   document.addEventListener('pointerdown',()=>{ if(!PH.wake) PH.wakeLock(); },{passive:true});
   // volo interrotto (app chiusa o telefono riavviato in volo): si riprende
   const cur=lsGet('ia517p_curflight',null);
@@ -2729,6 +2804,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.6','Corretto il blocco nel passaggio fra mappa e orizzonte; app più leggera (30 fotogrammi al secondo, terreno ricalcolato meno spesso). Zoom della mappa con due dita, con i pulsanti + e − e con 12 scale da 1 a 60 km. Orizzonte più morbido, regolabile in Impostazioni › Montaggio. A terra la mappa non si colora più di rosso.'],
   ['1.0.5','Licenza: © Enrico D\'Amico, tutti i diritti riservati. È nelle avvertenze, da riaccettare una volta, e nella pagina Info con il testo completo e le librerie di terze parti.'],
   ['1.0.4','Pagina Info: versione installata, aggiornamenti, segnalazioni per posta, avvertenze, crediti, donazione con PayPal.'],
   ['1.0','Prima versione per telefono e tablet: orizzonte e mappa dello strumento, rotte, circuito, piano di volo e meteo; GPS del telefono o Garmin GLO 2; terreno vero e avviso TERRENO; mappe OpenTopoMap, OpenStreetMap, satellite Esri, IGM 1:25.000, ortofoto; METAR e TAF; diario di volo con GPX; voce; tablet con due viste.'],
@@ -2771,6 +2847,8 @@ PH.diag=function(){
   const b=PH.version(), s=PH.status();
   return [`Versione ${b.version} (build ${b.build}, ${b.channel})`, navigator.userAgent, `Schermo ${innerWidth}×${innerHeight} @${devicePixelRatio}`,
     ...s.rows.map(r=>`${r[1]}: ${r[2]}`), `Errori di disegno: ${FRAME_ERR||0}${FRAME_LAST_ERR?' · ultimo: '+FRAME_LAST_ERR:''}`,
+    `Disegno: ${PH.perf.avg.toFixed(1)} ms per fotogramma · ${PH.fps} al secondo · blocchi ${PH.perf.stalls}`,
+    `Sessione precedente, ultimo stato: ${PH.hbPrev?new Date(PH.hbPrev.t).toLocaleString('it-IT')+' · pagina '+PH.hbPrev.page+' · zoom '+PH.hbPrev.zoom+' km · mappa '+PH.hbPrev.base+' · '+PH.hbPrev.ms+' ms (max '+PH.hbPrev.max+') · blocchi '+PH.hbPrev.stalls:'—'}`,
     'Ultimi errori:', ...(PH.errLog.length?PH.errLog.slice(0,12):['nessuno'])].join('\n');
 };
 // segnalazioni: inviate per posta tramite FormSubmit; senza rete restano in coda e partono dopo
