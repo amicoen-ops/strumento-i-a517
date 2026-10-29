@@ -1,0 +1,60 @@
+name: Collaudo su emulatore
+
+on:
+  workflow_run:
+    workflows: ["Compila APK"]
+    types: [completed]
+  push:
+    branches: [prova]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  emulatore:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: KVM per l'emulatore
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Ultima APK pubblicata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG=$(gh api repos/${{ github.repository }}/releases/latest --jq .tag_name)
+          echo "TAG=$TAG" >> $GITHUB_ENV
+          gh release download "$TAG" -R ${{ github.repository }} -p '*.apk' -O app.apk
+          pip install websocket-client
+
+      - name: Prova sull'emulatore (Android 14)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          disable-animations: true
+          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim
+          script: bash tools/emu_test.sh app.apk out
+
+      - name: Risultati in una issue (schermate nella pre-release «diagnostica»)
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          R=${{ github.repository }}
+          gh release view diagnostica -R $R >/dev/null 2>&1 || gh release create diagnostica -R $R --prerelease --title "Diagnostica (schermate del collaudo)" --notes "Non è una versione da installare."
+          cd out 2>/dev/null || exit 0
+          for f in *.png; do mv "$f" "${TAG}_$f"; done
+          gh release upload diagnostica -R $R --clobber *.png logcat.txt 2>/dev/null || true
+          { echo "APK: $TAG"; echo; echo '```'; cat cdp.txt 2>/dev/null | tail -60; echo '```'; echo; echo '```'; cat sintesi.txt 2>/dev/null | cut -c1-300 | head -250; echo '```'; } > ../report.md
+          gh issue create -R $R --title "Collaudo emulatore $TAG" --body-file ../report.md
