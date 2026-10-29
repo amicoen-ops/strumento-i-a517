@@ -1178,7 +1178,7 @@ function drawMap(g){
     ctx.strokeStyle='#ff4d4d'; ctx.lineWidth=2.6*k; ctx.setLineDash([4*k,4*k]);
     ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); ctx.setLineDash([]);
     ctx.fillStyle='#ff4d4d'; for(const p of [pa,pb]) ctx.fillRect(p.x-3*k,p.y-3*k,6*k,6*k);
-    if(zi<=2){ ctx.font=font(R*0.04,'700'); ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.lineWidth=3*k; ctx.strokeStyle='rgba(0,0,0,.75)';
+    if(ZOOMS[zi]<=8){ ctx.font=font(R*0.04,'700'); ctx.textAlign='center'; ctx.textBaseline='bottom'; ctx.lineWidth=3*k; ctx.strokeStyle='rgba(0,0,0,.75)';
       const mx=(pa.x+pb.x)/2, my=(pa.y+pb.y)/2-R*0.012; ctx.strokeText('CAVI',mx,my); ctx.fillText('CAVI',mx,my); } }
   // rotta
   ctx.lineCap='round'; ctx.lineJoin='round';
@@ -1216,6 +1216,9 @@ function drawMap(g){
   ctx.textBaseline='middle';
   for(const f of FIELDS){
     const p=toS(f.E,f.N); if(!onS(p)) continue;
+    if(ZOOMS[zi]>60 && NAV.dest!==f){ const ic=f.kind==='aero'; ctx.fillStyle=KIND_COL[f.kind]||'#e8f6ee'; ctx.beginPath(); ctx.arc(p.x,p.y,R*(ic?0.011:0.007),0,7); ctx.fill();
+      if(ic && ZOOMS[zi]<=180){ ctx.font=font(R*0.034,'700'); ctx.textAlign='left'; ctx.lineWidth=3*k; ctx.strokeStyle='rgba(0,0,0,.75)'; ctx.strokeText(f.short,p.x+R*0.016,p.y-R*0.012); ctx.fillText(f.short,p.x+R*0.016,p.y-R*0.012); }
+      continue; }
     const isDest=NAV.dest===f, icao=f.kind==='aero', rr=R*(icao?0.032:0.026), kc=KIND_COL[f.kind]||'#e8f6ee';
     ctx.fillStyle='rgba(6,10,15,.75)'; ctx.strokeStyle=isDest?C.mag:kc; ctx.lineWidth=(isDest?3:2)*k;
     ctx.beginPath(); ctx.arc(p.x,p.y,rr,0,7); ctx.fill(); ctx.stroke();
@@ -1228,7 +1231,7 @@ function drawMap(g){
       ctx.beginPath(); ctx.moveTo(c.x-Math.sin(a)*len/2,c.y+Math.cos(a)*len/2); ctx.lineTo(c.x+Math.sin(a)*len/2,c.y-Math.cos(a)*len/2); ctx.stroke(); }
     ctx.lineCap='round';
     if(!f.ends.length && (f.kind==='ulm'||f.kind==='aero')){ ctx.fillStyle=ctx.strokeStyle; ctx.beginPath(); ctx.arc(p.x,p.y,rr*0.35,0,7); ctx.fill(); }
-    if(zi<=3 || icao || isDest){
+    if(ZOOMS[zi]<=15 || icao || isDest){
       ctx.font=font(R*(isDest?0.052:0.043),'700'); ctx.textAlign='left';
       ctx.lineWidth=3*k; ctx.strokeStyle='rgba(0,0,0,.75)'; ctx.fillStyle=isDest?C.mag:kc;
       ctx.strokeText(f.short,p.x+rr*1.25,p.y-rr*0.9); ctx.fillText(f.short,p.x+rr*1.25,p.y-rr*0.9);
@@ -1789,7 +1792,7 @@ function terrainRaw(E,N){
 }
 function phDemAt(lat,lon,z){
   z=z||11;
-  for(let zz=z; zz>=8; zz--){
+  for(let zz=z, zmin=Math.min(8,Math.max(5,z-2)); zz>=zmin; zz--){
     const n=2**zz, fx=(lon+180)/360*n, lr=lat*D2R, fy=(1-Math.log(Math.tan(lr)+1/Math.cos(lr))/Math.PI)/2*n;
     const tx=Math.floor(fx), ty=Math.floor(fy), t=PH.dem.get(zz+'/'+tx+'/'+ty);
     if(!t){ if(zz===z) phDemFetch(zz,tx,ty); continue; }
@@ -1814,7 +1817,7 @@ async function phDemFetch(z,x,y){
     const d=cx.getImageData(0,0,256,256).data, a=new Int16Array(65536);
     for(let i=0;i<65536;i++){ const q=i*4; a[i]=Math.round(d[q]*256+d[q+1]+d[q+2]/256-32768); }
     PH.dem.set(key,a); PH.demVer++;
-    if(PH.dem.size>140){ const first=PH.dem.keys().next().value; PH.dem.delete(first); }   // al massimo ~18 MB in memoria
+    if(PH.dem.size>220){ const first=PH.dem.keys().next().value; PH.dem.delete(first); }   // al massimo ~28 MB in memoria
   }catch(e){ PH.demFail.set(key,Date.now()); }
   finally{ PH.demPend.delete(key); }
 }
@@ -1861,7 +1864,7 @@ function rasterMap(ac){
     if(MR.zi===zi && MR.half>0 && now-(PH.rastT||0)<1500) return;
     PH.rastT=now; }
   const n=MR.n, half=ZOOMS[zi]*1000*1.4, acAlt=S.alt*FT2M, base=PH&&PH.base!=='dem';
-  if(PH){ const km=ZOOMS[zi]; PH.demZ=km>=30?9:(km>=15?10:(km<=3?12:11)); }
+  if(PH){ const km=ZOOMS[zi]; PH.demZ=km>=250?7:(km>=90?8:(km>=30?9:(km>=15?10:(km<=3?12:11)))); }
   MR.cv.width=n; MR.cv.height=n; const c2=MR.cv.getContext('2d'), img=c2.createImageData(n,n);
   const z=new Float32Array(n*n), st=2*half/n, air=PH_air();
   for(let j=0;j<n;j++) for(let i=0;i<n;i++) z[j*n+i]=terrain(ac.E-half+(i+0.5)*st, ac.N+half-(j+0.5)*st);
@@ -2288,7 +2291,7 @@ function phoneBase(ac,sc,ax,ay,t){
   if(!PH || PH.base==='dem') return;
   const cosl=Math.cos(S.lat*D2R);
   const bd=PH.baseDef(); if(bd.key && !PH.esriKey) return;
-  let z=Math.floor(Math.log2(40075016.686*cosl*sc/(256*1.15))); z=clamp(z,Math.max(6,bd.min||6),bd.max||17);
+  let z=Math.floor(Math.log2(40075016.686*cosl*sc/(256*1.15))); z=clamp(z,Math.max(4,bd.min||4),bd.max||17);
   const n=2**z, rM=1.4*R/sc;
   const lat2y=la=>{ const r=la*D2R; return (1-Math.log(Math.tan(r)+1/Math.cos(r))/Math.PI)/2*n; };
   const x0=Math.floor((S.lon-rM/(111320*cosl)+180)/360*n), x1=Math.floor((S.lon+rM/(111320*cosl)+180)/360*n);
@@ -2325,7 +2328,7 @@ PH.prefetch=async function(kind,onProg){
     const x0=Math.floor((c0.lon-rKm*1000/(111320*cosl)+180)/360*n), x1=Math.floor((c0.lon+rKm*1000/(111320*cosl)+180)/360*n);
     const y0=Math.floor(lat2y(c0.lat+rKm*1000/110540)), y1=Math.floor(lat2y(c0.lat-rKm*1000/110540));
     for(let x=x0;x<=x1;x++) for(let y=y0;y<=y1;y++) jobs.push(urlF(z,x,y)); };
-  if(kind==='dem'){ add(9,150,phDemUrl); add(10,100,phDemUrl); add(11,60,phDemUrl); }
+  if(kind==='dem'){ add(7,450,phDemUrl); add(8,250,phDemUrl); add(9,150,phDemUrl); add(10,100,phDemUrl); add(11,60,phDemUrl); }
   else { const bd=PH.baseDef(); if(PH.base==='dem') return {done:0,ok:0};
     for(const z of [8,9,10,11,12,13]) if(z>=(bd.min||6) && z<=(bd.max||17)) add(z,z<=9?60:(z<=11?30:(z===12?12:6)),(z,x,y)=>PH.tileUrl(z,x,y,bd)); }
   let done=0, ok=0;
@@ -2727,8 +2730,8 @@ function frame(now){
   el('phOK').addEventListener('pointerup',()=>{ clearTimeout(okT); if(!okLong) push(); });
   ['pointerleave','pointercancel'].forEach(ev=>el('phOK').addEventListener(ev,()=>clearTimeout(okT)));
   el('phPage').addEventListener('click',()=>{ closeMenu(); togglePage(); toast(PAGE==='pfd'?'ORIZZONTE':'MAPPA'); });
-  // zoom della mappa: 12 passi da 1 a 60 km, ricordato
-  ZOOMS.splice(0,ZOOMS.length,1,2,3,4,6,8,11,15,22,30,45,60);
+  // zoom della mappa: 19 passi da 1 a 700 km (tutto il Nord Italia), ricordato
+  ZOOMS.splice(0,ZOOMS.length,1,2,3,4,6,8,11,15,22,30,45,60,90,125,180,250,350,500,700);
   zi=clamp(lsGet('ia517p_zoom',5)|0,0,ZOOMS.length-1); PH.ziSaved=zi;
   PH.zoomStep=function(d){ const nz=clamp(zi+d,0,ZOOMS.length-1); if(nz===zi){ toastShow(d<0?'ZOOM MASSIMO':'ZOOM MINIMO'); return; } zi=nz; MR.zi=-1; toastShow('ZOOM '+ZOOMS[zi]+' km'); };
   // gesti sullo strumento: tocco = premi, trascina in orizzontale = ruota, tieni premuto = pagina, due dita = zoom
@@ -2804,6 +2807,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.7','Zoom della mappa fino a 700 km (tutto il Nord Italia): 19 scale da 1 a 700 km. Oltre 60 km i campi diventano puntini e restano scritti solo gli aeroporti; il terreno usa tessere più leggere e si scarica anche per il volo senza internet.'],
   ['1.0.6','Corretto il blocco nel passaggio fra mappa e orizzonte; app più leggera (30 fotogrammi al secondo, terreno ricalcolato meno spesso). Zoom della mappa con due dita, con i pulsanti + e − e con 12 scale da 1 a 60 km. Orizzonte più morbido, regolabile in Impostazioni › Montaggio. A terra la mappa non si colora più di rosso.'],
   ['1.0.5','Licenza: © Enrico D\'Amico, tutti i diritti riservati. È nelle avvertenze, da riaccettare una volta, e nella pagina Info con il testo completo e le librerie di terze parti.'],
   ['1.0.4','Pagina Info: versione installata, aggiornamenti, segnalazioni per posta, avvertenze, crediti, donazione con PayPal.'],
