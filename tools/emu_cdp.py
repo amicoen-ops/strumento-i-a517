@@ -101,6 +101,13 @@ if ws:
         ev("document.getElementById('phPage').click(),1"); time.sleep(2)
         log(f"pulsante PAGINA {i+1}", [ev("PAGE"), alive(), round(ev("__gap") or 0)])
     log("scatola nera", ev("JSON.stringify(PH.trail.slice(-12))"))
+    log("openAIP (download vero)", ev("""(async()=>{ PH.show('piano'); await new Promise(r=>setTimeout(r,4000));
+        const w=document.getElementById('phAppFrame').contentWindow, d=w.document;
+        d.querySelector('[data-tab=briefing]').click(); d.getElementById('oaipGo').click();
+        for(let i=0;i<24;i++){ await new Promise(r=>setTimeout(r,1000)); if(w.IA517_asp().length) break; }
+        const n=w.IA517_asp().length; PH.show('volo');
+        return JSON.stringify({spazi:n, messaggio:d.getElementById('oaipMsg').textContent.slice(0,220)}); })()"""))
+    shot("06b_spazi_aerei")
     log("bussola", ev("JSON.stringify({prua:PH.mag.hdg!=null?Math.round(PH.mag.hdg):null,fonte:PH.mag.src||null,errore:PH.mag.err||null,in_uso:PH.magInUse()})"))
     log("prestazioni", ev("JSON.stringify({ms:PH.perf.avg.toFixed(1),blocchi:PH.perf.stalls,fps:PH.fps,vicini:PH.nearF&&PH.nearF.length,terreno:PH.dem.size,tessere:PH.tiles.size})"))
     step("08_demo", "(typeof PH.setDemo==='function'?(PH.setDemo(true),'demo'):'manca setDemo')", pause=25)

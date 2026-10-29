@@ -2284,7 +2284,7 @@ PH.checkAirspace=function(){
   const at=t=>({lat:S.lat+Math.cos(tr)*v*t/110540, lon:S.lon+Math.sin(tr)*v*t/(111320*cosl), ft:S.alt+S.vs*t/FT2M});
   const lim=(L,p)=>{ if(L.ref==='AGL'){ const z=terrain(...xy(enu(p.lat,p.lon))); return L.ft+(z===z?z/FT2M:0); } return L.ft; };
   for(const a of list){
-    if(/^(E|F|G|W|GP|GSEC)$/.test(a.cls)) continue;
+    if(/^(E|F|G|W|GP|GSEC|SPORT)$/.test(a.cls)) continue;
     const bb=a.bb; if(!bb || S.lat<bb[0]-0.1 || S.lat>bb[1]+0.1 || S.lon<bb[2]-0.15 || S.lon>bb[3]+0.15) continue;
     const label=`${a.cls} ${a.name}`.slice(0,40);
     for(const t of [0,30,60]){ const p=at(t);
@@ -3017,6 +3017,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.15','Spazi aerei d\'Italia da openAIP corretti: il file giusto (lo stesso di XCSoar, aggiornato ogni notte, senza chiave) e lettura del formato OpenAir 2.0, con zone R, P e pericolose riconosciute (1555 spazi). Le aree per attività sportive si vedono ma non danno avvisi.'],
   ['1.0.14','Spazi aerei veri d\'Italia con un pulsante: «Scarica gli spazi aerei d\'Italia (openAIP)». Prima il file pubblico di openAIP, senza account; se non risponde, l\'API openAIP con la chiave gratuita. Si riscaricano da soli a ogni ciclo AIRAC.'],
   ['1.0.13','Bussola letta direttamente dal sensore di Android (prima dipendeva dal browser interno e poteva mancare). Da fermo mappa e riquadro usano la prua della bussola (scritta PRUA) invece della traccia GPS, che a velocità zero è solo rumore.'],
   ['1.0.12','Bussola del telefono: a terra e sotto 25 km/h la prua viene dalla bussola (con la declinazione, prua vera); in volo dalla traccia GPS. Scelta in Impostazioni › Bussola. Quota: si può tarare a mano con una quota nota («Tara qui»).'],
