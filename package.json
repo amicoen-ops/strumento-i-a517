@@ -1,0 +1,16 @@
+{
+  "name": "strumento-i-a517",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Strumento di volo I-A517 per telefono e tablet Android",
+  "scripts": { "sync": "npx cap sync android" },
+  "dependencies": {
+    "@capacitor/android": "8.6.0",
+    "@capacitor/core": "8.6.0",
+    "@capacitor/filesystem": "8.1.5",
+    "@capacitor/share": "8.0.3",
+    "@capacitor-community/keep-awake": "8.0.1",
+    "@capacitor-community/text-to-speech": "8.0.2"
+  },
+  "devDependencies": { "@capacitor/cli": "8.6.0" }
+}

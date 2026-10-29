@@ -1,0 +1,1211 @@
+<!doctype html>
+<html lang="it"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<meta name="theme-color" content="#07080a">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="icon" href="icon-192.png">
+<style>[hidden]{display:none!important}</style>
+</head><body>
+<title>I-A517 Piano di Volo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600;700&family=Oxanium:wght@500;700&display=swap">
+<style>
+  /* App per il telefono: header fisso con stato del collegamento, contenuto a schede, barra schede in basso.
+     Un solo aspetto scuro, come lo strumento (notte in cabina). */
+  :root{
+    --bg:#0d1115; --panel:#151b21; --panel2:#1c242c; --line:#28323c;
+    --ink:#e5ecf1; --dim:#8a96a2; --mag:#ff4fd8; --cyan:#3fd9ff;
+    --ok:#2fd27a; --warn:#ffc531; --bad:#ff5a5a;
+    --f-display:"Oxanium","Barlow Semi Condensed",system-ui,sans-serif;
+    --f-body:"Barlow Semi Condensed","Roboto Condensed",system-ui,sans-serif;
+    color-scheme:dark;
+  }
+  html,body{height:100%}
+  body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.4;
+    -webkit-tap-highlight-color:transparent}
+  body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--panel)}
+  .app{max-width:520px;margin:0 auto;min-height:100%;display:flex;flex-direction:column}
+  header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--panel);border-bottom:1px solid var(--line);
+    padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:10px;
+    display:flex;align-items:center;justify-content:space-between;gap:12px}
+  .brand{display:flex;flex-direction:column;min-width:0}
+  .brand b{font-family:var(--f-display);font-weight:700;font-size:18px;letter-spacing:.08em}
+  .brand span{font-size:12px;color:var(--dim)}
+  .link{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;padding:5px 11px;border-radius:999px;
+    background:var(--panel2);border:1px solid var(--line);white-space:nowrap}
+  .dot{width:8px;height:8px;border-radius:50%;background:var(--ok);box-shadow:0 0 0 3px rgba(47,210,122,.18)}
+  main{flex:1;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
+    padding-block:14px 96px;display:flex;flex-direction:column;gap:14px}
+  .demo{font-size:12.5px;color:var(--warn);border:1px solid rgba(255,197,49,.35);background:rgba(255,197,49,.07);border-radius:10px;padding:8px 11px}
+  section.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+  h2{font-family:var(--f-display);font-weight:500;font-size:13px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim);margin:0;text-wrap:balance}
+  .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .fld{display:flex;flex-direction:column;gap:4px;min-width:0}
+  .fld label{font-size:12px;color:var(--dim);letter-spacing:.04em}
+  select,input[type=number],input[type=text],input[type=search],textarea{width:100%;box-sizing:border-box;background:var(--panel2);color:var(--ink);
+    border:1px solid var(--line);border-radius:10px;padding:10px 11px;font:inherit;font-size:16px;min-height:44px}
+  textarea{min-height:64px;resize:vertical}
+  select:focus-visible,input:focus-visible,textarea:focus-visible,button:focus-visible{outline:2px solid var(--cyan);outline-offset:1px}
+  .route{display:flex;flex-direction:column;gap:8px}
+  .rp{display:grid;grid-template-columns:80px 1fr auto;gap:8px;align-items:center}
+  .rp .tag{font-family:var(--f-display);font-size:11px;letter-spacing:.1em;color:var(--dim);text-transform:uppercase}
+  .rp.dest .tag{color:var(--mag)} .rp.alt .tag{color:#d58ccc}
+  .icon-btn{width:44px;height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font-size:20px;cursor:pointer}
+  .ghost{background:transparent;border:1px dashed var(--line);color:var(--cyan);border-radius:10px;min-height:44px;font:inherit;font-weight:600;cursor:pointer}
+  canvas#map{width:100%;max-width:100%;aspect-ratio:4/3;display:block;border-radius:10px;background:#0a1410;border:1px solid var(--line)}
+  .tbl{overflow-x:auto}
+  table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums;font-size:14.5px}
+  th{font-weight:500;color:var(--dim);font-size:12px;text-align:right;padding:6px 6px;border-bottom:1px solid var(--line);white-space:nowrap}
+  td{text-align:right;padding:7px 6px;border-bottom:1px solid #1f2830;white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  td.leg{font-weight:600}
+  .totals{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+  .tot{background:var(--panel2);border-radius:10px;padding:9px 10px;display:flex;flex-direction:column;gap:2px;min-width:0}
+  .tot span{font-size:11.5px;color:var(--dim)}
+  .tot b{font-family:var(--f-display);font-weight:700;font-size:20px;font-variant-numeric:tabular-nums}
+  .fuel{display:flex;flex-direction:column;gap:6px;font-variant-numeric:tabular-nums}
+  .fuel .row{display:flex;justify-content:space-between;gap:10px;font-size:14.5px}
+  .fuel .row span:first-child{color:var(--dim)}
+  .fuel .row.sum{border-top:1px solid var(--line);padding-top:6px;font-weight:700}
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:700;font-size:14px;width:fit-content}
+  .pill.ok{background:rgba(47,210,122,.14);color:var(--ok)} .pill.warn{background:rgba(255,197,49,.14);color:var(--warn)} .pill.bad{background:rgba(255,90,90,.15);color:var(--bad)}
+  .arr{display:flex;flex-direction:column;gap:8px}
+  .rwy{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+  .rwy b{font-family:var(--f-display);font-size:30px;font-weight:700;color:var(--mag);line-height:1}
+  .rwy span{color:var(--ink)}
+  .alertline{color:var(--bad);font-weight:700;font-size:14.5px}
+  .sub{font-size:13px;color:var(--dim)}
+  .send{position:relative;width:100%;min-height:54px;border:0;border-radius:12px;background:var(--mag);color:#1a0016;font-family:var(--f-display);
+    font-weight:700;font-size:17px;letter-spacing:.06em;cursor:pointer}
+  .send[disabled]{opacity:.6}
+  .sent{font-size:14px;color:var(--ok);font-weight:600}
+  details{border-top:1px solid var(--line);padding-top:8px}
+  summary{cursor:pointer;color:var(--dim);font-size:13.5px}
+  pre{margin:8px 0 0;background:#0a0e12;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:11.5px;overflow:auto;max-height:260px;color:#c5d3dd}
+  ul.inflight{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14.5px}
+  /* campi */
+  .flist{display:flex;flex-direction:column}
+  .fi{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:11px 2px;border-bottom:1px solid #1f2830;cursor:pointer;background:none;border-left:0;border-right:0;border-top:0;color:inherit;text-align:left;font:inherit}
+  .fi .n{font-weight:700;display:flex;gap:8px;align-items:center;min-width:0}
+  .fi .n i{font-style:normal;font-size:11px;font-weight:700;color:var(--mag);border:1px solid var(--mag);border-radius:6px;padding:0 5px}
+  .fi .m{grid-column:1/2;font-size:13px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+  .fi .d{grid-row:1/3;grid-column:2;align-self:center;font-variant-numeric:tabular-nums;color:var(--dim);font-size:14px}
+  .editor{background:var(--panel2);border-radius:12px;padding:12px;display:flex;flex-direction:column;gap:10px;margin:6px 0 10px}
+  .seg{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden}
+  .seg button{min-height:40px;min-width:52px;border:0;background:transparent;color:var(--dim);font:inherit;font-weight:700;cursor:pointer}
+  .seg button[aria-pressed="true"]{background:var(--cyan);color:#00222c}
+  .siderow{display:flex;align-items:center;justify-content:space-between;gap:10px}
+  .btnrow{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--ink);font:inherit;font-weight:600;cursor:pointer}
+  .btn.pri{background:var(--cyan);border-color:var(--cyan);color:#00222c}
+  /* meteo */
+  .metar{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid #1f2830}
+  .metar:last-child{border-bottom:0}
+  .metar .raw{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12.5px;color:#b7c6d2;word-break:break-word}
+  .metar .dec{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:14px;font-variant-numeric:tabular-nums}
+  .metar .dec b{color:var(--cyan)}
+  .mh{display:flex;justify-content:space-between;align-items:center;gap:8px}
+  .mh b{font-family:var(--f-display);font-size:16px}
+  /* stato */
+  .st{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;padding:9px 0;border-bottom:1px solid #1f2830}
+  .st:last-child{border-bottom:0}
+  .st .v{color:var(--dim);font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+  .upd{display:flex;flex-direction:column;gap:3px;padding:10px 0;border-bottom:1px solid #1f2830}
+  .upd:last-child{border-bottom:0}
+  .upd .h{display:flex;justify-content:space-between;gap:10px;align-items:center}
+  .badge{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--warn);border:1px solid rgba(255,197,49,.5);border-radius:6px;padding:1px 6px;white-space:nowrap}
+  ol.steps{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px}
+  code{font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;background:#0a0e12;border:1px solid var(--line);border-radius:6px;padding:0 5px}
+  nav.tabs{position:fixed;left:0;right:0;bottom:0;z-index:6;background:var(--panel);border-top:1px solid var(--line);
+    padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+  nav.tabs .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr)}
+  .bsum{display:flex;flex-wrap:wrap;gap:8px}
+  canvas#prof{width:100%;max-width:100%;aspect-ratio:640/360;display:block;border-radius:10px;background:#0a0f14;border:1px solid var(--line)}
+  .it{display:grid;grid-template-columns:auto 1fr;gap:3px 10px;padding:10px 0;border-bottom:1px solid #1f2830;min-width:0}
+  .it:last-child{border-bottom:0}
+  .it .cls{font-family:var(--f-display);font-weight:700;font-size:12px;padding:2px 7px;border-radius:6px;border:1px solid currentColor;align-self:start;white-space:nowrap}
+  .it .t{font-weight:700;min-width:0}
+  .it .s,.it .v{grid-column:2;font-size:13.5px;min-width:0}
+  .it .s{color:var(--dim)} .it .v{font-weight:600}
+  .ok{color:var(--ok)} .warn{color:var(--warn)} .bad{color:var(--bad)}
+  .srcrow{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  label.btn{display:inline-flex;align-items:center}
+  .raw2{grid-column:1/-1;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:12px;color:#b7c6d2;white-space:pre-wrap;word-break:break-word;background:#0a0e12;border-radius:8px;padding:8px}
+  .elrow{display:flex;flex-direction:column;gap:6px;padding:10px 0;border-bottom:1px solid #1f2830}
+  .elrow:last-child{border-bottom:0}
+  .elrow .in2{display:flex;gap:8px} .elrow .in2 input{max-width:140px}
+  .tolink{background:none;border:0;color:var(--cyan);font:inherit;font-weight:600;padding:0;cursor:pointer;text-align:left}
+  nav.tabs button{min-height:58px;border:0;background:none;color:var(--dim);font:inherit;font-size:12px;font-weight:600;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px}
+  nav.tabs button svg{width:22px;height:22px}
+  nav.tabs button[aria-selected="true"]{color:var(--cyan)}
+  .toast{position:fixed;left:50%;bottom:calc(72px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--panel2);border:1px solid var(--line);
+    color:var(--ink);padding:9px 16px;border-radius:999px;font-weight:600;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:9;max-width:calc(100% - 32px);text-align:center}
+  .toast.show{opacity:1}
+  .rl{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;padding:10px 0;border-bottom:1px solid #1f2830}
+  .rl:last-child{border-bottom:0}
+  .rl .n{font-weight:700;min-width:0;overflow-wrap:anywhere} .rl .m{grid-column:1/-1;font-size:13px;color:var(--dim)}
+  .rl .b{display:flex;gap:6px}
+  .rl .b .btn{min-height:40px;padding:0 12px}
+  .rwrow{display:grid;grid-template-columns:1fr 1fr 1fr auto;gap:8px;align-items:end}
+  .chk{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--dim);min-height:44px}
+  .chk input{width:20px;height:20px;accent-color:var(--cyan)}
+  .link.off .dot{background:var(--warn);box-shadow:0 0 0 3px rgba(255,197,49,.18)}
+  .pend{color:var(--warn);font-size:13px}
+  @media (prefers-reduced-motion: reduce){ .toast{transition:none} }
+</style>
+
+<div class="app">
+  <header>
+    <div class="brand"><b>I-A517</b><span>Strumento 80 mm · telefono</span></div>
+    <div class="link" id="link"><span class="dot"></span><span id="linkTxt">Anteprima · non collegato</span></div>
+  </header>
+
+  <main>
+    <div class="demo" id="demoBanner">Pagina del piano aperta da sola: aprila dall'app dello strumento per collegarla.</div>
+
+    <!-- PIANO -->
+    <div id="tab-piano" class="tab">
+      <section class="card">
+        <h2>Rotta</h2>
+        <div class="route" id="route"></div>
+        <button class="ghost" id="addWp" type="button">+ Aggiungi tappa</button>
+        <canvas id="map" width="900" height="675" aria-label="Mappa della rotta"></canvas>
+      </section>
+
+      <section class="card">
+        <h2>Rotte salvate</h2>
+        <div class="sub">Le trovi anche sullo strumento: manopola › ROTTE SALVATE. «Vola» la manda subito: a terra parte, in volo lo strumento chiede conferma.</div>
+        <div id="savedRoutes"></div>
+        <button class="ghost" id="saveRoute" type="button">Salva questa rotta</button>
+      </section>
+
+      <section class="card">
+        <h2>Volo</h2>
+        <div class="grid2">
+          <div class="fld"><label for="pAlt">Quota di crociera (ft)</label><input id="pAlt" type="number" inputmode="numeric" step="100" min="500" max="12000" value="2500"></div>
+          <div class="fld"><label for="pTas">Velocità di crociera (km/h)</label><input id="pTas" type="number" inputmode="numeric" step="5" min="60" max="145" value="110"></div>
+          <div class="fld"><label for="pBurn">Consumo (L/h)</label><input id="pBurn" type="number" inputmode="decimal" step="0.5" min="5" max="25" value="14"></div>
+          <div class="fld"><label for="pFuel">Carburante a bordo (L)</label><input id="pFuel" type="number" inputmode="decimal" step="1" min="0" max="73" value="60"></div>
+          <div class="fld"><label for="pRes">Riserva finale (min)</label><input id="pRes" type="number" inputmode="numeric" step="5" min="0" max="90" value="30"></div>
+          <div class="fld"><label for="pTaxi">Rullaggio e salita (L)</label><input id="pTaxi" type="number" inputmode="decimal" step="0.5" min="0" max="10" value="1.5"></div>
+          <div class="fld" style="grid-column:1/-1"><label for="pDep">Partenza prevista (ora locale)</label><input id="pDep" type="datetime-local"></div>
+        </div>
+        <div class="tbl"><table id="legs"></table></div>
+        <div class="totals" id="totals"></div>
+        <div class="fuel" id="fuel"></div>
+      </section>
+
+      <section class="card">
+        <h2>Arrivo</h2>
+        <div class="arr" id="arrival"></div>
+      </section>
+
+      <section class="card">
+        <div id="bLine"></div>
+        <button class="send" id="send" type="button">Invia allo strumento</button>
+        <div class="sent" id="sentMsg" hidden></div>
+        <div>
+          <div class="sub" style="margin-bottom:6px">Con la sola manopola, anche in volo:</div>
+          <ul class="inflight">
+            <li>ROTTE SALVATE: scegli e parti; tappa successiva o rotta inversa</li>
+            <li>NUOVA ROTTA: tocchi i campi uno dopo l'altro, dal più vicino</li>
+            <li>DIRECT TO su un campo, pista in uso sentita alla radio, QNH</li>
+            <li>Salva questo punto; le piste nuove te le propone lo strumento dopo decollo o atterraggio</li>
+            <li>Rotte e QNH mandati da qui in volo: premi = sì, ruoti = no</li>
+          </ul>
+        </div>
+        <details><summary>Dati che ricevono lo strumento (per lo sviluppo)</summary><pre id="json"></pre></details>
+      </section>
+    </div>
+
+    <!-- BRIEFING -->
+    <div id="tab-briefing" class="tab" hidden>
+      <section class="card">
+        <h2>Briefing della rotta</h2>
+        <div class="bsum" id="bSummary"></div>
+        <div class="sub">Controlli di supporto alla pianificazione. Il briefing ufficiale (AIP, NOTAM e attivazione delle aree in vigore) resta obbligatorio prima di ogni volo.</div>
+      </section>
+      <section class="card">
+        <h2>Spazi aerei sulla rotta</h2>
+        <div class="srcrow"><span class="sub" id="aspSrc"></span><label class="btn" for="aspFile">Carica file OpenAir</label><input id="aspFile" type="file" accept=".txt,.air,.openair,text/plain" hidden></div>
+        <canvas id="prof" width="640" height="360" aria-label="Profilo verticale della rotta con gli spazi aerei"></canvas>
+        <div id="aspList"></div>
+      </section>
+      <section class="card">
+        <h2>NOTAM</h2>
+        <div class="sub">Sullo strumento arrivano da AIP:Aero (API con chiave) per i campi della rotta e per la FIR di Milano. Qui puoi incollare quelli del briefing ufficiale: vengono confrontati con rotta, quota e orario.</div>
+        <textarea id="notamIn" rows="6" placeholder="Incolla qui i NOTAM, nel formato ICAO con la riga Q)"></textarea>
+        <div class="btnrow"><button class="btn pri" id="notamGo" type="button">Analizza NOTAM</button><button class="btn" id="notamEx" type="button">Carica esempi</button></div>
+        <div id="notamList"></div>
+      </section>
+      <section class="card">
+        <h2>Quote dei campi</h2>
+        <div class="sub">Lo strumento usa la quota che confermi tu, per esempio letta sull'altimetro a terra con il QNH. Senza conferma usa la più alta tra le fonti: circuito e sentiero di discesa restano così sopra il terreno.</div>
+        <div id="elevList"></div>
+      </section>
+    </div>
+
+    <!-- CAMPI -->
+    <div id="tab-campi" class="tab" hidden>
+      <section class="card">
+        <h2>Nuovo campo o pista</h2>
+        <div class="sub">Un prato che non c'è nei dati, o una pista nuova di un campo che c'è. Arriva subito sullo strumento, anche in volo, e resta salvato. Dalla manopola: «Salva questo punto», oppure lo strumento te lo propone da solo dopo un decollo o un atterraggio su una pista che non conosce.</div>
+        <div class="grid2">
+          <div class="fld"><label for="nfShort">Sigla (max 14)</label><input id="nfShort" type="text" maxlength="14" autocapitalize="characters" placeholder="es. PRATO ROSSI"></div>
+          <div class="fld"><label for="nfName">Nome</label><input id="nfName" type="text" maxlength="40" placeholder="es. Prato Rossi, Cigliano"></div>
+        </div>
+        <div class="fld"><label for="nfPos">Posizione</label><input id="nfPos" type="text" inputmode="text" placeholder="45.2531, 7.8989 · oppure 45°15'11&quot;N 7°53'56&quot;E"></div>
+        <div class="btnrow"><button class="btn" type="button" id="nfHere">Posizione dello strumento</button><button class="btn" type="button" id="nfFrom">Copia da un campo</button></div>
+        <select id="nfCopy" hidden aria-label="Campo da cui copiare la posizione"></select>
+        <div class="fld"><label for="nfElev">Quota del campo (ft)</label><input id="nfElev" type="number" inputmode="numeric" step="10" placeholder="vuota = stima dal terreno"></div>
+        <div id="nfRws"></div>
+        <button class="ghost" id="nfAddRw" type="button">+ Pista</button>
+        <div class="btnrow"><button class="btn pri" type="button" id="nfSave">Salva e invia allo strumento</button></div>
+        <div class="sub" id="nfMsg"></div>
+      </section>
+      <section class="card">
+        <h2>Campi e punti aggiunti da te</h2>
+        <div id="ufList"></div>
+      </section>
+      <section class="card">
+        <h2>Note dei campi</h2>
+        <div class="sub">Pista preferenziale, lato e quota del circuito, ostacoli. Lo strumento le usa per scegliere la pista e costruire il circuito.</div>
+        <input type="search" id="fSearch" placeholder="Cerca un campo" aria-label="Cerca un campo">
+        <div class="flist" id="flist"></div>
+      </section>
+    </div>
+
+    <!-- METEO -->
+    <div id="tab-meteo" class="tab" hidden>
+      <section class="card">
+        <h2>Destinazione</h2>
+        <div class="arr" id="wxDest"></div>
+      </section>
+      <section class="card">
+        <h2>Vento al campo: fonti</h2>
+        <ol class="steps">
+          <li><b>METAR ufficiali</b> degli aeroporti (Caselle, Biella, Aosta...): da aviationweather.gov, aperti e incollati qui sotto.</li>
+          <li><b>Vento previsto</b> sul punto esatto dell'aviosuperficie, da modello meteo: utile dove non c'è METAR, come alla Carolina.</li>
+          <li><b>Vento stimato in volo</b> dalle virate, con il GPS del telefono: quando c'è, è quello che decide la pista in avvicinamento.</li>
+          <li><b>Radio e manica a vento</b>: hanno sempre l'ultima parola, e la pista sentita in frequenza si conferma con la manopola.</li>
+        </ol>
+      </section>
+      <section class="card">
+        <h2>Meteo sui campi del piano</h2>
+        <div id="metars"></div>
+      </section>
+      <section class="card">
+        <h2>METAR ufficiali</h2>
+        <div id="metarOff"></div>
+      </section>
+    </div>
+
+    <!-- STRUMENTO -->
+    <div id="tab-strumento" class="tab" hidden>
+      <section class="card">
+        <h2>Stato</h2>
+        <div id="status"></div>
+      </section>
+      <section class="card">
+        <h2>Collegare il telefono</h2>
+        <ol class="steps">
+          <li>Su Android attiva l'hotspot con nome <code>I-A517-LINK</code> (lo imposti una volta sola).</li>
+          <li>Accendi lo strumento: si collega da solo e mostra un codice QR nella pagina di setup.</li>
+          <li>Inquadra il QR: si apre questa pagina con l'indirizzo giusto.</li>
+          <li>In hangar senza hotspot lo strumento crea la rete <code>I-A517</code>: collegati e apri <code>10.42.0.1</code>.</li>
+        </ol>
+      </section>
+      <section class="card">
+        <h2>Aggiornamenti</h2>
+        <div class="upd"><div class="h"><b>Dati di navigazione</b><span class="badge">FASE 2</span></div>
+          <div class="sub">Campi (CUP), spazi aerei (OpenAir), terreno e ostacoli, caricati dal telefono.</div></div>
+        <div class="upd"><div class="h"><b>Firmware scheda sensori</b><span class="badge">FASE 2</span></div>
+          <div class="sub">Il Raspberry lo invia alla XIAO sul collegamento seriale già esistente. La versione precedente resta in memoria e torna attiva se la nuova non parte.</div></div>
+        <div class="upd"><div class="h"><b>Software dello strumento</b><span class="badge">FASE 2</span></div>
+          <div class="sub">Pacchetto firmato, installato solo a terra e con conferma sulla manopola.</div></div>
+      </section>
+    </div>
+  </main>
+</div>
+
+<nav class="tabs" aria-label="Sezioni">
+  <div class="in" role="tablist">
+    <button role="tab" data-tab="piano" aria-selected="true" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19 L10 9 L15 13 L20 5"/><circle cx="4" cy="19" r="1.6"/><circle cx="20" cy="5" r="1.6"/></svg>Piano</button>
+    <button role="tab" data-tab="briefing" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3 L21 19 H3 Z"/><path d="M12 10 V14"/><circle cx="12" cy="16.6" r=".6"/></svg>Briefing</button>
+    <button role="tab" data-tab="campi" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="8"/><path d="M7 16 L17 8"/></svg>Campi</button>
+    <button role="tab" data-tab="meteo" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7 H20 L18 11 H4"/><path d="M4 4 V21"/></svg>Meteo</button>
+    <button role="tab" data-tab="strumento" aria-selected="false" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="4"/><circle cx="12" cy="12" r="5"/><path d="M12 12 L15 9"/></svg>Strumento</button>
+  </div>
+</nav>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+"use strict";
+const D2R=Math.PI/180, R2D=180/Math.PI;
+const wrap360=a=>((a%360)+360)%360, angDiff=(a,b)=>((a-b+540)%360)-180, clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+const $=id=>document.getElementById(id);
+const PHONE=(()=>{ try{ return window.parent!==window && !!parent.IA517; }catch(e){ return false; } })();
+const store={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d;}catch(e){return d;}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
+
+// campi (OurAirports: Piemonte, Valle d'Aosta e 100 km dalla Carolina, con altiporti e ghiacciai): ident, sigla, nome, lat, lon, quota ft, piste [le, he, rotta vera, lunghezza m, asfalto]
+const FIELDS_RAW=[["IT-0074","CAROLINA","Carolina",45.25315,7.89898,708,[["18","36",183,600,0]],"ulm"],["IT-0001","IL FALCO","Il Falco",45.26925,7.95073,768,[["07","25",73,650,0],["18","36",183,349,0]],"ulm"],["IT-0775","VEROLENGO","Verolengo",45.18612,7.98596,null,[],"ulm"],["LIVV","LIVV","Moncucco-Vische",45.34461,7.91907,781,[["18","36",180.0,631,0]],"aero"],["IT-0193","LUCCHINA","Lucchina Fly Club",45.32148,8.00024,951,[],"ulm"],["IT-0076","CANAVESE","Canavese ULM Club",45.35873,7.71929,853,[["13","31",133,369,0]],"ulm"],["IT-0055","PEGASUS","Pegasus 2000",45.31167,7.66515,1312,[["18","36",183,450,0]],"ulm"],["LIMF","LIMF","Torino Caselle",45.2008,7.64963,989,[["18","36",183.0,3300,1]],"aero"],["IT-0168","CAB CLUB","Cab Club",45.05783,8.06682,764,[],"ulm"],["IT-0048","CASTELNUOVO","Castelnuovo Don Bosco",45.02444,7.96639,730,[["15","33",150.0,749,0]],"ulm"],["IT-0035","IVREA","Ivrea Montalto Dora",45.48755,7.84323,810,[["14","32",143.0,798,0]],"ulm"],["IT-0202","VENARIA","Venaria Reale",45.13013,7.61201,null,[],"ulm"],["LIMA","LIMA","Torino Aeritalia",45.08444,7.60306,943,[["10L","28R",101.0,1074,1],["10R","28L",101.5,750,0]],"aero"],["LILE","LILE","Biella-Cerrione",45.4953,8.10278,920,[["16","34",156.0,1320,1]],"aero"],["IT-0069","CARISIO","Carisio",45.44662,8.1915,150,[],"ulm"],["IT-0058","MUSINÈ","Prealpi-Musinè",45.1245,7.52144,1106,[["03","21",33,600,0]],"ulm"],["IT-0426","RIVOLI","Rivoli Tetti Neirotti",45.04682,7.53646,1000,[],"ulm"],["IT-0677","OZZANO","Ozzano",45.12039,8.35202,null,[],"ulm"],["IT-0075","CERRETO","Cerreto Castello",45.54806,8.16111,1000,[],"ulm"],["IT-0050","COSSATO","Cossato",45.53191,8.20114,804,[],"ulm"],["IT-0072","TRIVERSA","Val Triversa",44.90689,8.0341,574,[],"ulm"],["LILI","LILI","Vercelli",45.31111,8.4175,417,[["09","27",83.0,559,0]],"aero"],["IT-0269","ROVASENDA","Rovasenda 2000",45.54435,8.27891,787,[["12","30",123,500,0]],"ulm"],["LILM","LILM","Casale Monferrato",45.11004,8.4569,377,[["18","36",178.0,879,0]],"aero"],["IT-0191","ELIKA","L'Elika",44.88293,7.56105,null,[],"ulm"],["IT-0073","VALSUSA","Valsusa",45.1125,7.28722,1250,[["09","27",93,349,0]],"ulm"],["IT-0051","CUMIANA","Cumiana",44.93904,7.42892,984,[["14","32",143,449,0]],"ulm"],["IT-0053","GATTINARA","Gattinara",45.60434,8.32446,922,[],"ulm"],["IT-0159","ONDALBA","Ondalba",44.77612,7.87933,1017,[],"ulm"],["IT-0042","ASTIGIANA","Astigiana",44.88881,8.35487,469,[],"ulm"],["IT-0041","ANGIALE","Angiale",44.83361,7.53056,843,[],"ulm"],["IT-0065","LAGHETTO","Il Laghetto",44.77788,8.13034,450,[["05","23",53,450,0]],"ulm"],["IT-0039","MEGGIANA","Meggiana",45.74609,8.0407,5344,[],"alti"],["IT-0045","COLOMBARE","Cascina Colombare",45.49611,8.52527,558,[["09","27",93,800,0]],"ulm"],["IT-0425","AEROTEAM","Aeroteam",45.43624,8.57737,null,[],"ulm"],["IT-0427","BOZZO","Andrea Bozzo",44.86374,7.40707,984,[],"ulm"],["IT-0071","SANT'ELIA","Sant'Elia",44.74196,7.70987,null,[["17","35",173,650,0]],"ulm"],["IT-0043","BOGLIETTO","Boglietto",44.75861,8.18306,610,[["10","28",103,749,0]],"ulm"],["IT-0228","CERUTTI","Gianni Cerutti",45.34921,8.64632,393,[["17","35",173,399,0]],"ulm"],["IT-0511","CERIELLA","La Ceriella",45.22014,8.65954,null,[],"ulm"],["IT-0434","AIRONE","L'Airone",45.15273,8.65522,338,[],"ulm"],["IT-0218","VOLOPURO","Volopuro",45.56409,8.54184,null,[],"ulm"],["IT-0037","MERLO","Merlo Romano",44.83443,7.36357,1000,[["10","28",103,449,0]],"ulm"],["IT-0068","CHATELAIR","Chatelair",45.74,7.48056,1500,[],"ulm"],["IT-0767","S. MICHELE","San Michele NO11",45.66137,8.48094,912,[],"ulm"],["IT-0040","M. INGEGNO","Marc Ingegno",45.77806,8.26861,1411,[],"ulm"],["IT-0192","LE STREGHE","Le Streghe",45.39452,8.70693,410,[["16","34",163,339,0]],"ulm"],["IT-0549","VERBANO","Verbano Fly",45.67637,8.48646,null,[],"ulm"],["LILA","LILA","Alessandria",44.92563,8.62673,299,[["03","21",33,640,0]],"aero"],["LIMN","LIMN","Cameri (militare)",45.5296,8.66922,586,[["17","35",168.0,2992,1]],"aero"],["IT-0067","CHAMOIS","Chamois",45.8335,7.61765,5600,[],"alti"],["LIMW","LIMW","Aosta",45.73855,7.3683,1791,[["09","27",85.0,1246,1]],"aero"],["IT-0472","LEONARDO DA V","Leonardo da Vinci",45.28833,8.8,358,[["06L","24R",63,649,0]],"ulm"],["IT-0790","GRANTA PAREÌ","Granta Pareì ghiacciaio",45.49264,7.06053,null,[],"glac"],["IT-0789","COL DI RHÉMES","Col di Rhémes",45.49614,7.05721,null,[],"glac"],["IT-0791","SASSIERE","Gh. de la Sassiere",45.49695,7.03797,null,[],"glac"],["IT-0047","CASCINA VALEN","Cascina Valentino",44.69544,7.40242,280,[],"ulm"],["IT-0196","NATALE/BATTIS","Natale/Battistoni",45.33496,8.82417,357,[["14","32",143,470,0]],"ulm"],["IT-0785","LYS","Ghiacciaio del Lys",45.91712,7.85535,null,[],"glac"],["IT-0800","SANT'ANNA DI","Sant'Anna di Saluzzo",44.65943,7.45636,981,[],"ulm"],["IT-0054","IL PICCHIO","Il Picchio",45.70873,8.59571,699,[],"ulm"],["IT-0801","ALI SUL PO","Ali sul Po",44.65734,7.44981,991,[],"ulm"],["IT-0057","PIOVERA","Piovera",44.93583,8.74933,312,[],"ulm"],["IT-0118","MEZZANA BIGLI","Mezzana Bigli",45.06541,8.83518,null,[["03","21",33,800,0]],"ulm"],["LIMC","LIMC","Milano Malpensa",45.6306,8.72811,768,[["17L","35R",170.0,3920,1],["17R","35L",170.0,3920,1]],"aero"],["IT-0784","NEVAIO DEL FA","Nevaio del Fallére",45.75881,7.18948,null,[],"glac"],["IT-0038","ACQUI TERME","Acqui Terme",44.67749,8.50124,430,[],"ulm"],["FR-0293","LA TOVIÈRE","La Tovière",45.46567,6.93239,7349,[],"alti"],["IT-0977","CÀ DEL PIERPA","Cà del Pierpa",44.89918,8.7827,299,[],"ulm"],["IT-0504","MANTOVANA","Mantovana",44.72663,8.59373,738,[],"ulm"],["IT-0111","NAVIGLI","Navigli",45.41441,8.89507,374,[],"ulm"],["IT-0064","PLOIA","Ploia",44.88417,8.78083,420,[],"ulm"],["LILG","LILG","Vergiate",45.71263,8.70071,863,[["16","34",163,800,0]],"aero"],["LIMZ","LIMZ","Cuneo Levaldigi",44.54746,7.62305,1267,[["03","21",32.0,2104,1]],"aero"],["FR-0273","GRANDE MOTTE","Glacier de la Grande Motte",45.425,6.89444,9564,[],"glac"],["IT-0780","RUTOR GLACIER","Rutor Glacier",45.63222,7.00542,10830,[],"glac"],["IT-0786","CHAMPILLON","Champillon",45.85064,7.27391,null,[],"alti"],["IT-0783","BRAOULÉ","Ghiacciaio del Braoulé",45.95113,7.52853,null,[],"glac"],["FR-0313","COL DU PALET","Col du Palet",45.45045,6.8826,8005,[],"glac"],["IT-0782","MONT GELÉ","Gh. del Mont Gelé",45.90268,7.36571,null,[],"glac"],["IT-0063","COUNTRY FLY","Country Fly",44.50306,7.82167,1350,[["18","36",183,420,0]],"ulm"],["IT-0059","CITTÀ DI TORT","Città di Tortona",44.93844,8.86588,315,[],"ulm"],["IT-0138","AIR FOLIES","Air Folies",45.53297,8.90103,558,[["16","34",163,289,0]],"ulm"],["IT-0756","PIAN MUNE'","Pian Mune'",44.6458,7.24493,4905,[["04","22",43,99,0]],"alti"],["IT-0044","BELTRUTTA","Beltrutta",44.49651,7.72297,1174,[],"ulm"],["IT-0710","CASCINA ROSIO","Cascina Rosio",45.41609,8.96513,384,[["16","34",16.0,509,0]],"ulm"],["LFKD","LFKD","Sollières Sardières",45.2538,6.80114,4255,[],"alti"],["LIMR","LIMR","Novi Ligure Eugenio Mossi",44.78,8.78639,607,[["18","36",183,925,0]],"aero"],["IT-0052","FRANCAVILLA B","Francavilla Bisio",44.72987,8.73007,525,[],"ulm"],["IT-0341","OASI","Oasi",45.69656,8.82695,980,[["18","36",183,390,0]],"ulm"],["VB02","MEGOLO","Megolo",45.99625,8.30313,709,[["12L","30R",123,359,0]],"ulm"],["IT-0379","ROSANGELES","Rosangeles",45.36298,9.01706,360,[["16","34",163,600,0]],"ulm"],["IT-0112","VOLO CLUB MIL","Volo Club Milano",45.44944,8.99833,335,[],"ulm"],["IT-0273","GIULIANO BORG","Giuliano Borgonovi",45.1871,9.04282,203,[],"ulm"],["LILC","LILC","Calcinate del Pesce",45.8097,8.76806,797,[],"aero"],["FR-0272","CHIAUPE","Altisurface du Glacier de la Chiaupe",45.49167,6.775,10170,[],"glac"],["IT-0062","BOSIO GUIDO","Bosio Guido",44.43421,7.63215,1500,[["06","21",63,480,0]],"ulm"],["IT-0034","GIANCARLO FIL","Giancarlo Filippi",44.41437,7.81128,1411,[],"ulm"],["LILH","LILH","Voghera-Rivanazzano",44.952,9.01653,423,[["16","34",159.6,1000,1]],"aero"],["LILN","LILN","Varese-Venegono",45.7422,8.88823,1100,[["17","35",176.0,1420,1]],"aero"],["IT-0554","ALTA LANGA","Alta Langa",44.41115,8.12085,627,[["16","34",163,385,0]],"ulm"],["IT-0056","ALPI MARITTIM","Alpi Marittime",44.39111,7.72556,1457,[["06","24",63,480,0]],"ulm"],["IT-0208","MACCAGNO","Maccagno",44.4236,7.45913,null,[],"ulm"],["IT-0792","MIRAVIDI BREU","Gh. del Miravidi breul",45.71196,6.82283,null,[],"glac"],["LSYR","ROSA BLANCHE","Rosa Blanche Mountain Landing Site",46.06083,7.35472,null,[],"glac"],["CH-0003","PRASFLEURI","Altisurface du Glacier de Prasfleuri",46.06429,7.35432,null,[],"glac"],["IT-0793","LÉCHAUD","Gh. del Léchaud",45.73186,6.81623,null,[],"glac"],["IT-0049","CHAVEZ-MARINI","Chavez-Marini",46.13417,8.30633,922,[["01","19",13,779,0],["18","36",178.0,600,1]],"ulm"]];
+const KIND_TXT={aero:'aeroporto',ulm:'aviosuperficie',alti:'altiporto',glac:'ghiacciaio, solo sci'};
+const FIELDS=FIELDS_RAW.map(([id,short,name,lat,lon,elft,rw,kind])=>({id,short,name,lat,lon,elft,kind,
+  rw:rw.map(r=>({le:r[0],he:r[1],hdg:r[2],L:r[3],paved:!!r[4]}))}));
+FIELDS.forEach(f=>{ f.ends=[]; f.rw.forEach(r=>{ f.ends.push({id:r.le,hdg:r.hdg}); f.ends.push({id:r.he,hdg:wrap360(r.hdg+180)}); }); });
+const byId=id=>FIELDS.find(f=>f.id===id);
+const HOME=byId('IT-0074');
+function dist(a,b){ const E=(b.lon-a.lon)*111320*Math.cos((a.lat+b.lat)/2*D2R), N=(b.lat-a.lat)*110540; return {d:Math.hypot(E,N), brg:wrap360(Math.atan2(E,N)*R2D)}; }
+const sortedFields=()=>[...FIELDS].sort((a,b)=>a.short.localeCompare(b.short,'it'));
+
+// note dei campi: valori iniziali (Carolina come indicato dal pilota; lato della 18 da confermare)
+const DEFAULT_NOTES={'IT-0074':{elevFt:740,elevAt:'2026-10-27T15:04:00Z',pref:'36',side:{'36':'L','18':'R'},hcFt:800,maxTail:10,freq:'',obst:'Cavi in testata 18',warn:{'18':'CAVI IN TESTATA 18'},text:'Ingresso in sottovento a circa 1500 ft.'},
+  'IT-0001':{pref:'07',side:{},hcFt:800,maxTail:10,freq:'',obst:'',warn:{},text:'Pista in uso di solito: 07.'}};
+let NOTES=store.get('ia517_notes',null)||JSON.parse(JSON.stringify(DEFAULT_NOTES));
+if(!NOTES['IT-0001']) NOTES['IT-0001']=JSON.parse(JSON.stringify(DEFAULT_NOTES['IT-0001']));
+if(NOTES['IT-0074'] && NOTES['IT-0074'].elevFt==null){ NOTES['IT-0074'].elevFt=740; NOTES['IT-0074'].elevAt='2026-10-27T15:04:00Z'; }
+const noteOf=f=>NOTES[f.id]||null;
+
+// ---------------- piano ----------------
+let PLAN=store.get('ia517_plan',null)||{from:'IT-0074',wps:[],dest:'LILE',alt:'IT-0074',cruiseFt:2500,tas:110,burn:14,fuel:60,res:30,taxi:1.5};
+function fieldOptions(sel,withNone){
+  return (withNone?'<option value="">Nessuno</option>':'')+sortedFields().map(f=>`<option value="${f.id}"${f.id===sel?' selected':''}>${esc(f.short)} · ${esc(f.name)}${f.kind==='alti'||f.kind==='glac'?' ('+KIND_TXT[f.kind]+')':''}</option>`).join('');
+}
+function esc(s){ return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+function renderRoute(){
+  const rows=[];
+  rows.push(rp('from','Partenza',PLAN.from,false));
+  PLAN.wps.forEach((w,i)=>rows.push(rp('wp'+i,'Tappa '+(i+1),w,true)));
+  rows.push(rp('dest','Arrivo',PLAN.dest,false,'dest'));
+  rows.push(rp('alt','Alternato',PLAN.alt,false,'alt',true));
+  $('route').innerHTML=rows.join('');
+  $('route').querySelectorAll('select').forEach(s=>s.addEventListener('change',()=>{
+    const k=s.dataset.k; if(k.startsWith('wp')) PLAN.wps[+k.slice(2)]=s.value; else PLAN[k]=s.value; update(); }));
+  $('route').querySelectorAll('.icon-btn').forEach(b=>b.addEventListener('click',()=>{ PLAN.wps.splice(+b.dataset.i,1); renderRoute(); update(); }));
+}
+function rp(k,tag,val,removable,cls,none){
+  return `<div class="rp ${cls||''}"><span class="tag">${tag}</span><select data-k="${k}" aria-label="${tag}">${fieldOptions(val,none)}</select>`+
+    (removable?`<button class="icon-btn" type="button" data-i="${k.slice(2)}" aria-label="Togli ${tag}">×</button>`:'<span></span>')+'</div>';
+}
+$('addWp').addEventListener('click',()=>{ PLAN.wps.push(PLAN.dest); renderRoute(); update(); });
+function defDep(){ const d=new Date(Date.now()+3600e3); d.setMinutes(Math.ceil(d.getMinutes()/15)*15,0,0); const z=n=>String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${z(d.getMonth()+1)}-${z(d.getDate())}T${z(d.getHours())}:${z(d.getMinutes())}`; }
+if(!PLAN.dep || new Date(PLAN.dep)<new Date(Date.now()-6*3600e3)) PLAN.dep=defDep();
+$('pDep').value=PLAN.dep; $('pDep').addEventListener('change',()=>{ if($('pDep').value){ PLAN.dep=$('pDep').value; update(); } });
+const numIn={pAlt:'cruiseFt',pTas:'tas',pBurn:'burn',pFuel:'fuel',pRes:'res',pTaxi:'taxi'};
+for(const [id,k] of Object.entries(numIn)){ $(id).value=PLAN[k]; $(id).addEventListener('input',()=>{ const v=parseFloat($(id).value); if(!isNaN(v)){ PLAN[k]=v; update(); } }); }
+
+function legsOf(){
+  const pts=[PLAN.from,...PLAN.wps,PLAN.dest].map(byId).filter(Boolean);
+  const legs=[]; for(let i=0;i<pts.length-1;i++){ const g=dist(pts[i],pts[i+1]); legs.push({a:pts[i],b:pts[i+1],...g}); }
+  return {pts,legs};
+}
+function compute(){
+  const {pts,legs}=legsOf(), tas=Math.max(30,PLAN.tas);
+  const km=legs.reduce((s,l)=>s+l.d,0)/1000, min=km/tas*60;
+  const altF=PLAN.alt?byId(PLAN.alt):null, dst=byId(PLAN.dest);
+  const altKm=(altF&&dst&&altF!==dst)?dist(dst,altF).d/1000:0, altMin=altKm/tas*60;
+  const trip=min/60*PLAN.burn, altL=altMin/60*PLAN.burn, resL=PLAN.res/60*PLAN.burn, need=PLAN.taxi+trip+altL+resL;
+  const margin=PLAN.fuel-need, endur=PLAN.fuel/PLAN.burn*60;
+  return {pts,legs,km,min,altKm,altMin,trip,altL,resL,need,margin,endur,altF,dst};
+}
+const fmtMin=m=>{ m=Math.round(m); return m<60?m+"'":Math.floor(m/60)+'h'+String(m%60).padStart(2,'0'); };
+function renderPlan(c){
+  $('legs').innerHTML='<thead><tr><th>Tratta</th><th>Rotta</th><th>km</th><th>Tempo</th></tr></thead><tbody>'+
+    c.legs.map(l=>`<tr><td class="leg">${esc(l.a.short)} → ${esc(l.b.short)}</td><td>${String(Math.round(l.brg)).padStart(3,'0')}°</td><td>${(l.d/1000).toFixed(1)}</td><td>${fmtMin(l.d/1000/PLAN.tas*60)}</td></tr>`).join('')+
+    (c.altKm?`<tr><td class="leg" style="color:#d58ccc">${esc(c.dst.short)} → ${esc(c.altF.short)} (alt.)</td><td>${String(Math.round(dist(c.dst,c.altF).brg)).padStart(3,'0')}°</td><td>${c.altKm.toFixed(1)}</td><td>${fmtMin(c.altMin)}</td></tr>`:'')+'</tbody>';
+  $('totals').innerHTML=`<div class="tot"><span>Distanza</span><b>${c.km.toFixed(0)} km</b></div><div class="tot"><span>Tempo senza vento</span><b>${fmtMin(c.min)}</b></div><div class="tot"><span>Autonomia a bordo</span><b>${fmtMin(c.endur)}</b></div>`;
+  const st=c.margin>=3?['ok','Carburante sufficiente']:(c.margin>=0?['warn','Margine minimo']:['bad','Carburante insufficiente']);
+  $('fuel').innerHTML=`
+    <div class="row"><span>Rullaggio e salita</span><span>${PLAN.taxi.toFixed(1)} L</span></div>
+    <div class="row"><span>Viaggio</span><span>${c.trip.toFixed(1)} L</span></div>
+    <div class="row"><span>Alternato</span><span>${c.altL.toFixed(1)} L</span></div>
+    <div class="row"><span>Riserva ${PLAN.res} min</span><span>${c.resL.toFixed(1)} L</span></div>
+    <div class="row sum"><span>Necessario / a bordo</span><span>${c.need.toFixed(1)} / ${PLAN.fuel.toFixed(0)} L</span></div>
+    <span class="pill ${st[0]}">${st[1]} · ${c.margin>=0?'+':''}${c.margin.toFixed(1)} L</span>
+    ${PLAN.fuel>73?'<span class="pill bad">Oltre la capienza dei serbatoi (73 L)</span>':''}`;
+}
+
+// scelta pista: stessa logica dello strumento
+function pickRunway(f,wind){
+  if(!f.ends.length) return null;
+  const n=noteOf(f)||{}, pref=n.pref&&f.ends.find(e=>e.id===n.pref);
+  const head=e=>wind?wind.kmh*Math.cos(angDiff(e.hdg,wind.dir)*D2R):0;
+  let best=f.ends[0], bh=-1e9; if(wind) f.ends.forEach(e=>{ const h=head(e); if(h>bh){bh=h;best=e;} });
+  let end, why;
+  if(pref && (!wind || -head(pref)<=(n.maxTail??10))){ end=pref; why=wind?'preferenziale del campo':'preferenziale del campo (vento non noto)'; }
+  else if(wind && wind.kmh>4){ end=best; why=pref?'vento in coda sulla '+pref.id:'più contraria al vento'; }
+  else { end=pref||f.ends[0]; why=wind?'vento debole, prima pista nei dati':'vento non noto, prima pista nei dati: verifica alla radio'; }
+  const side=(n.side&&n.side[end.id])||'L', hc=n.hcFt||800, warn=n.warn&&n.warn[end.id];
+  const xw=wind?Math.abs(wind.kmh*Math.sin(angDiff(end.hdg,wind.dir)*D2R)):null, hw=wind?head(end):null;
+  return {end,why,side,hc,warn,xw,hw};
+}
+function arrivalHTML(f,wind,src){
+  if(!f) return '<div class="sub">Scegli il campo di arrivo.</div>';
+  const p=pickRunway(f,wind), n=noteOf(f);
+  if(!p) return `<div><b>${esc(f.name)}</b> <span class="sub">${KIND_TXT[f.kind]||''}</span></div><div class="sub">${f.kind==='glac'?'Superficie su ghiacciaio: solo con aereo su sci e abilitazione per il volo in montagna.':(f.kind==='alti'?'Altiporto: pista in pendenza non presente nei dati. Si atterra in salita e si decolla in discesa: verifica direzione, pendenza e quota prima di partire.':'Pista non presente nei dati: sorvola e verifica manica a vento e radio.')}</div>${elevLine(f)}`;
+  return `<div class="rwy"><b>${p.end.id}</b><span>${esc(f.name)} · circuito ${p.side==='L'?'sinistro':'destro'} · ${p.hc} ft sopra il campo</span></div>
+    <div class="sub">Scelta: ${p.why}${wind?` · vento ${src} ${String(wind.dir).padStart(3,'0')}°/${Math.round(wind.kmh)} km/h: ${p.hw>=0?'contrario':'in coda'} ${Math.abs(p.hw).toFixed(0)}, traverso ${p.xw.toFixed(0)} km/h`:''}.</div>
+    ${p.warn?`<div class="alertline">${esc(p.warn)}</div>`:''}
+    ${f.kind==='alti'?'<div class="alertline">Altiporto: verifica pendenza e senso di atterraggio, di solito in salita a prescindere dal vento.</div>':''}
+    ${n&&n.obst?`<div class="sub">Ostacoli: ${esc(n.obst)}</div>`:''}
+    ${n&&n.text?`<div class="sub">${esc(n.text)}</div>`:''}
+    ${elevLine(f)}
+    <div class="sub">Piste ${f.rw.map(r=>r.le+'/'+r.he+' '+r.L+' m '+(r.paved?'asfalto':'erba')).join(', ')}</div>`;
+}
+
+// mappa della rotta
+const cv=$('map'), ctx=cv.getContext('2d');
+function drawMap(c){
+  const W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#0a1410'; ctx.fillRect(0,0,W,H);
+  const pts=[...c.pts]; if(c.altF) pts.push(c.altF);
+  let la0=Math.min(...pts.map(p=>p.lat)), la1=Math.max(...pts.map(p=>p.lat)), lo0=Math.min(...pts.map(p=>p.lon)), lo1=Math.max(...pts.map(p=>p.lon));
+  const cl=Math.cos((la0+la1)/2*D2R), lat0=(la0+la1)/2, lon0=(lo0+lo1)/2;
+  let spanE=Math.max((lo1-lo0)*111320*cl,(la1-la0)*110540*W/H,20000)*1.35;
+  const sc=W/spanE, P=p=>({x:W/2+(p.lon-lon0)*111320*cl*sc, y:H/2-(p.lat-lat0)*110540*sc});
+  // griglia 10 km
+  ctx.strokeStyle='rgba(255,255,255,.05)'; ctx.lineWidth=1;
+  const step=10000*sc; for(let x=(W/2)%step;x<W;x+=step){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,H);ctx.stroke();} for(let y=(H/2)%step;y<H;y+=step){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(W,y);ctx.stroke();}
+  ctx.fillStyle='rgba(255,255,255,.45)'; ctx.font='500 28px "Barlow Semi Condensed",sans-serif'; ctx.textAlign='left'; ctx.textBaseline='bottom';
+  ctx.fillRect(16,H-22,step,3); ctx.fillText('10 km',16,H-28);
+  // campi
+  for(const f of FIELDS){ const p=P(f); if(p.x<-20||p.x>W+20||p.y<-20||p.y>H+20) continue;
+    const icao=f.kind==='aero';
+    ctx.strokeStyle=icao?'#3fd9ff':(f.kind==='alti'?'#ffb35c':(f.kind==='glac'?'#9ad8ff':'#9fb2a6')); ctx.lineWidth=3; ctx.beginPath(); ctx.arc(p.x,p.y,icao?12:9,0,7); ctx.stroke();
+    if(f.rw[0]){ const a=f.rw[0].hdg*D2R; ctx.beginPath(); ctx.moveTo(p.x-Math.sin(a)*18,p.y+Math.cos(a)*18); ctx.lineTo(p.x+Math.sin(a)*18,p.y-Math.cos(a)*18); ctx.stroke(); } }
+  const line=(a,b,col,w,dash)=>{ const pa=P(a), pb=P(b); ctx.setLineDash(dash||[]); ctx.strokeStyle='rgba(0,0,0,.6)'; ctx.lineWidth=w+4; ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke();
+    ctx.strokeStyle=col; ctx.lineWidth=w; ctx.beginPath(); ctx.moveTo(pa.x,pa.y); ctx.lineTo(pb.x,pb.y); ctx.stroke(); ctx.setLineDash([]); };
+  // spazi aerei
+  for(const a of ASP){ const col=clsColor(a.cls); ctx.beginPath(); a.pts.forEach((q,i)=>{ const p=P(q); i?ctx.lineTo(p.x,p.y):ctx.moveTo(p.x,p.y); }); ctx.closePath();
+    ctx.globalAlpha=.12; ctx.fillStyle=col; ctx.fill(); ctx.globalAlpha=.8; ctx.strokeStyle=col; ctx.lineWidth=2.5; ctx.stroke(); ctx.globalAlpha=1; }
+  if(c.altF&&c.dst&&c.altF!==c.dst) line(c.dst,c.altF,'#d58ccc',3,[12,10]);
+  c.legs.forEach(l=>line(l.a,l.b,'#ff4fd8',5));
+  ctx.font='700 36px "Barlow Semi Condensed",sans-serif'; ctx.textBaseline='middle';
+  const lab=(f,col)=>{ const p=P(f); ctx.fillStyle=col; ctx.beginPath(); ctx.arc(p.x,p.y,12,0,7); ctx.fill();
+    ctx.lineWidth=5; ctx.strokeStyle='rgba(0,0,0,.75)'; ctx.textAlign=p.x>W*0.72?'right':'left'; const dx=p.x>W*0.72?-20:20;
+    ctx.strokeText(f.short,p.x+dx,p.y-22); ctx.fillStyle='#fff'; ctx.fillText(f.short,p.x+dx,p.y-22); };
+  c.pts.forEach((f,i)=>lab(f,i===c.pts.length-1?'#ff4fd8':'#ffffff'));
+  if(c.altF&&c.altF!==c.dst) lab(c.altF,'#d58ccc');
+}
+
+// ---------------- meteo (esempi) ----------------
+const STATIONS={LIMF:{lat:45.2008,lon:7.6497,name:'Torino Caselle'},LIMC:{lat:45.6306,lon:8.7281,name:'Milano Malpensa'},LIMW:{lat:45.7385,lon:7.3687,name:'Aosta'}};
+const METARS=['LIMF 271450Z 19002KT CAVOK 16/07 Q1020','LIMC 271450Z 18003KT 130V220 CAVOK 16/08 Q1020 NOSIG','LIMW 271450Z 09007KT 060V120 CAVOK 16/06 Q1020'];
+function parseMetar(s){
+  s=s.replace(/^(METAR|SPECI)\s+/,'');
+  const t=s.trim().split(/\s+/), o={id:t[0],raw:s};
+  for(const x of t.slice(1)){
+    let m;
+    if((m=x.match(/^(\d{2})(\d{2})(\d{2})Z$/))) o.time=`${m[2]}:${m[3]} UTC`;
+    else if((m=x.match(/^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?(KT|MPS)$/))){ const f=m[5]==='KT'?1.852:3.6; o.vrb=m[1]==='VRB'; o.dir=o.vrb?null:+m[1]; o.kmh=+m[2]*f; if(m[4]) o.gust=+m[4]*f; }
+    else if((m=x.match(/^(\d{3})V(\d{3})$/))) o.vrange=`${m[1]}°–${m[2]}°`;
+    else if(x==='CAVOK') o.vis='CAVOK';
+    else if(/^\d{4}$/.test(x)) o.vis=x==='9999'?'≥10 km':(+x/1000).toFixed(1)+' km';
+    else if((m=x.match(/^(FEW|SCT|BKN|OVC)(\d{3})/))) (o.cl=o.cl||[]).push(`${{FEW:'poche',SCT:'sparse',BKN:'molte',OVC:'coperto'}[m[1]]} ${+m[2]*100} ft`);
+    else if((m=x.match(/^(M?\d{2})\/(M?\d{2})$/))){ o.t=+m[1].replace('M','-'); o.dp=+m[2].replace('M','-'); }
+    else if((m=x.match(/^Q(\d{4})$/))) o.qnh=+m[1];
+  }
+  return o;
+}
+const WX=METARS.map(parseMetar);
+function nearestWx(f){ let b=null,bd=1e12; WX.forEach(w=>{ const s=STATIONS[w.id]; const d=dist(f,s).d; if(d<bd){bd=d;b=w;} }); return {w:b,d:bd}; }
+function renderWx(){
+  $('metars').innerHTML=WX.map(w=>`<div class="metar"><div class="mh"><b>${w.id} · ${STATIONS[w.id].name}</b><button class="btn" type="button" data-q="${w.qnh}">Invia QNH ${w.qnh}</button></div>
+    <div class="raw">${esc(w.raw)}</div>
+    <div class="dec"><span>Vento <b>${w.vrb?'variabile':String(w.dir).padStart(3,'0')+'°'} ${Math.round(w.kmh)} km/h${w.gust?' raffiche '+Math.round(w.gust):''}${w.vrange?' (variabile '+w.vrange+')':''}</b></span>
+    <span>Vis. <b>${w.vis||'n.d.'}</b></span><span>Nubi <b>${w.cl?w.cl.join(', '):(w.vis==='CAVOK'?'nessuna':'n.d.')}</b></span>
+    <span>T <b>${w.t}°</b> / Td <b>${w.dp}°</b></span><span>QNH <b>${w.qnh}</b></span><span class="sub">emesso ${w.time}</span></div></div>`).join('');
+  $('metars').querySelectorAll('button[data-q]').forEach(b=>b.addEventListener('click',()=>sendQnh(+b.dataset.q)));
+  const f=byId(PLAN.dest);
+  if(f){ const {w,d}=nearestWx(f); const wind=(w&&!w.vrb)?{dir:w.dir,kmh:w.kmh}:null;
+    $('wxDest').innerHTML=`<div class="sub">${esc(f.name)}: stazione più vicina ${w.id}, a ${(d/1000).toFixed(0)} km. Il vento al campo può essere diverso.</div>`+arrivalHTML(f,wind,w.id); }
+}
+
+// ---------------- note dei campi ----------------
+let openField=null;
+function renderFields(){
+  const q=$('fSearch').value.trim().toLowerCase();
+  const list=FIELDS.map(f=>({f,...dist(HOME,f)})).filter(x=>!q||(x.f.short+' '+x.f.name+' '+x.f.id).toLowerCase().includes(q)).sort((a,b)=>a.d-b.d);
+  $('flist').innerHTML=list.map(x=>`<button class="fi" type="button" data-id="${x.f.id}" aria-expanded="${openField===x.f.id}">
+      <span class="n">${esc(x.f.short)}${noteOf(x.f)?'<i>NOTE</i>':''}</span>
+      <span class="m">${esc(x.f.name)}${x.f.kind==='alti'||x.f.kind==='glac'?' · '+KIND_TXT[x.f.kind]:''} · ${x.f.rw.length?x.f.rw.map(r=>r.le+'/'+r.he).join(' '):'pista n.d.'}</span>
+      <span class="d">${(x.d/1000).toFixed(0)} km</span></button>${openField===x.f.id?editorHTML(x.f):''}`).join('');
+  $('flist').querySelectorAll('.fi').forEach(b=>b.addEventListener('click',()=>{ openField=openField===b.dataset.id?null:b.dataset.id; renderFields(); }));
+  if(openField) bindEditor(byId(openField));
+}
+function editorHTML(f){
+  const n=noteOf(f)||{side:{},hcFt:800,maxTail:10};
+  const sides=f.ends.map(e=>`<div class="siderow"><span>Circuito pista <b>${e.id}</b></span><div class="seg" data-end="${e.id}">
+      <button type="button" data-s="L" aria-pressed="${(n.side&&n.side[e.id]||'L')==='L'}">SX</button><button type="button" data-s="R" aria-pressed="${(n.side&&n.side[e.id])==='R'}">DX</button></div></div>`).join('');
+  return `<div class="editor" id="ed">
+    <div class="fld"><label for="ePref">Pista preferenziale</label><select id="ePref"><option value="">Nessuna (decide il vento)</option>${f.ends.map(e=>`<option${n.pref===e.id?' selected':''}>${e.id}</option>`).join('')}</select></div>
+    ${sides||'<div class="sub">Nessuna pista nei dati per questo campo.</div>'}
+    <div class="grid2">
+      <div class="fld"><label for="eHc">Quota circuito (ft sopra il campo)</label><input id="eHc" type="number" inputmode="numeric" step="50" value="${n.hcFt||800}"></div>
+      <div class="fld"><label for="eTail">Vento in coda max (km/h)</label><input id="eTail" type="number" inputmode="numeric" step="1" value="${n.maxTail??10}"></div>
+    </div>
+    <div class="fld"><label for="eElev">Quota confermata (ft)</label><input id="eElev" type="number" inputmode="numeric" placeholder="${elevInfo(f).use??''} (da verificare)" value="${n.elevFt??''}"></div>
+    <div class="fld"><label for="eFreq">Frequenza radio</label><input id="eFreq" type="text" inputmode="decimal" placeholder="es. 130.000" value="${esc(n.freq||'')}"></div>
+    <div class="fld"><label for="eObst">Ostacoli</label><input id="eObst" type="text" placeholder="es. cavi in testata 18" value="${esc(n.obst||'')}"></div>
+    ${f.ends.length?`<div class="fld"><label for="eWarnEnd">Avviso rosso quando la pista in uso è</label><select id="eWarnEnd"><option value="">Nessuna</option>${f.ends.map(e=>`<option${n.warn&&n.warn[e.id]?' selected':''}>${e.id}</option>`).join('')}</select></div>`:''}
+    <div class="fld"><label for="eText">Note</label><textarea id="eText">${esc(n.text||'')}</textarea></div>
+    <div class="btnrow"><button class="btn pri" type="button" id="eSave">Salva</button>${NOTES[f.id]?'<button class="btn" type="button" id="eDel">Elimina note</button>':''}</div>
+  </div>`;
+}
+function bindEditor(f){
+  const ed=$('ed'); if(!ed) return;
+  const sides={}; ed.querySelectorAll('.seg').forEach(sg=>{ const e=sg.dataset.end; sides[e]=sg.querySelector('[aria-pressed="true"]')?.dataset.s||'L';
+    sg.querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{ sides[e]=b.dataset.s; sg.querySelectorAll('button').forEach(x=>x.setAttribute('aria-pressed',x===b)); })); });
+  $('eSave').addEventListener('click',()=>{
+    const we=$('eWarnEnd')?$('eWarnEnd').value:'', obst=$('eObst').value.trim();
+    const ev=parseFloat($('eElev').value), old=NOTES[f.id]||{};
+    NOTES[f.id]={elevFt:isNaN(ev)?null:Math.round(ev),elevAt:isNaN(ev)?null:(old.elevFt===Math.round(ev)?old.elevAt:new Date().toISOString()),pref:$('ePref').value||null,side:sides,hcFt:+$('eHc').value||800,maxTail:+$('eTail').value||10,freq:$('eFreq').value.trim(),obst,
+      warn:we?{[we]:(obst||'ATTENZIONE').toUpperCase()}:{},text:$('eText').value.trim()};
+    store.set('ia517_notes',NOTES); toast(`Note di ${f.short} salvate: verranno inviate con il piano`); markDirty(); update();
+  });
+  const del=$('eDel'); if(del) del.addEventListener('click',()=>{ delete NOTES[f.id]; store.set('ia517_notes',NOTES); toast('Note eliminate'); markDirty(); renderFields(); update(); });
+}
+$('fSearch').addEventListener('input',renderFields);
+
+// ---------------- quote dei campi ----------------
+// altre fonti trovate in rete (sullo strumento si aggiunge la quota del terreno dal DEM sotto la pista)
+const ELEV_OTHER={'IT-0074':[{src:'QNHfly',ft:994},{src:'ulm.it',ft:null,note:'riporta 0, dato mancante'}]};
+function elevInfo(f){
+  const srcs=[]; if(f.elft!=null) srcs.push({src:'OurAirports',ft:f.elft});
+  (ELEV_OTHER[f.id]||[]).forEach(s=>srcs.push(s));
+  const valid=srcs.filter(s=>s.ft!=null), n=noteOf(f);
+  if(n&&n.elevFt!=null) return {use:n.elevFt,status:'ok',label:`confermata da te: ${n.elevFt} ft (altimetro a terra con QNH)`,srcs,confirmed:true};
+  if(!valid.length) return {use:null,status:'bad',label:'nessuna fonte: inserisci la quota',srcs};
+  const vals=valid.map(s=>s.ft), mx=Math.max(...vals), mn=Math.min(...vals);
+  if(valid.length===1) return {use:mx,status:'warn',label:`una sola fonte (${mx} ft): da confermare`,srcs};
+  if(mx-mn>50) return {use:mx,status:'bad',label:`fonti discordanti, ${mn}–${mx} ft: uso ${mx} ft finché non confermi`,srcs};
+  return {use:mx,status:'warn',label:`fonti concordi (${mx} ft): da confermare`,srcs};
+}
+function elevLine(f){ const e=elevInfo(f); return `<div class="sub">Quota campo: <span class="${e.status}">${e.label}</span></div>`; }
+function planFields(){ const ids=[PLAN.from,...PLAN.wps,PLAN.dest,PLAN.alt].filter(Boolean); return [...new Set(ids)].map(byId).filter(Boolean); }
+function renderElev(){
+  $('elevList').innerHTML=planFields().map(f=>{ const e=elevInfo(f);
+    return `<div class="elrow"><div><b>${esc(f.short)}</b> <span class="sub">${esc(f.name)}</span></div>
+      <div class="sub">${e.srcs.map(s=>`${s.src}: ${s.ft!=null?s.ft+' ft':esc(s.note||'n.d.')}`).join(' · ')||'nessuna fonte'}</div>
+      <div class="${e.status}" style="font-weight:600;font-size:14px">${e.label}</div>
+      <div class="in2"><input type="number" inputmode="numeric" id="el_${f.id}" aria-label="Quota confermata ${esc(f.short)} in piedi" placeholder="ft" value="${e.confirmed?e.use:''}">
+        <button class="btn" type="button" data-el="${f.id}">${e.confirmed?'Aggiorna':'Conferma quota'}</button></div></div>`; }).join('');
+  $('elevList').querySelectorAll('button[data-el]').forEach(b=>b.addEventListener('click',()=>{
+    const id=b.dataset.el, v=parseFloat($('el_'+id).value); if(isNaN(v)){ toast('Scrivi la quota in piedi'); return; }
+    NOTES[id]=Object.assign({},NOTES[id]||{side:{},hcFt:800,maxTail:10},{elevFt:Math.round(v),elevAt:new Date().toISOString()});
+    store.set('ia517_notes',NOTES); toast(`Quota di ${byId(id).short} confermata: ${Math.round(v)} ft`); update(); }));
+}
+
+// ---------------- spazi aerei (OpenAir) ----------------
+const COORD_RE=/(\d+):(\d+(?:\.\d+)?)(?::(\d+(?:\.\d+)?))?\s*([NS])\s*,?\s*(\d+):(\d+(?:\.\d+)?)(?::(\d+(?:\.\d+)?))?\s*([EW])/gi;
+function coordsIn(s){ return [...s.matchAll(COORD_RE)].map(m=>({lat:(+m[1]+ +m[2]/60+(m[3]?+m[3]/3600:0))*(/S/i.test(m[4])?-1:1),lon:(+m[5]+ +m[6]/60+(m[7]?+m[7]/3600:0))*(/W/i.test(m[8])?-1:1)})); }
+function offLL(c,E,N){ return {lat:c.lat+N/110540, lon:c.lon+E/(111320*Math.cos(c.lat*D2R))}; }
+function parseAltOA(s){
+  s=s.trim().toUpperCase();
+  if(/^(SFC|GND)/.test(s)||/^0+\s*$/.test(s)) return {ft:0,ref:'AGL',txt:'SFC'};
+  if(/^UNL/.test(s)) return {ft:99999,ref:'MSL',txt:'UNL'};
+  let m=s.match(/^FL\s*(\d+)/); if(m) return {ft:+m[1]*100,ref:'MSL',txt:'FL'+(+m[1])};
+  m=s.match(/^(\d+)\s*(FT|F|M)?\s*(AGL|AGND|GND|SFC|AMSL|MSL|ALT)?/);
+  if(m){ let v=+m[1]; if(m[2]==='M') v=Math.round(v/0.3048); const agl=/AGL|AGND|GND|SFC/.test(m[3]||''); return {ft:v,ref:agl?'AGL':'MSL',txt:`${v} ft ${agl?'AGL':'AMSL'}`}; }
+  return {ft:0,ref:'MSL',txt:s};
+}
+function parseOpenAir(text){
+  const out=[]; let cur=null, center=null, dir=1;
+  const push=()=>{ if(cur&&cur.pts.length>=3) out.push(cur); };
+  const arc=(c,rM,a1,a2,d)=>{ let span=d>0?((a2-a1+360)%360):-((a1-a2+360)%360); if(Math.abs(span)<1e-6) span=360*d;
+    const n=Math.max(6,Math.ceil(Math.abs(span)/5)), pts=[]; for(let i=0;i<=n;i++){ const a=(a1+span*i/n)*D2R; pts.push(offLL(c,rM*Math.sin(a),rM*Math.cos(a))); } return pts; };
+  const brgM=(c,p)=>{ const E=(p.lon-c.lon)*111320*Math.cos(c.lat*D2R), N=(p.lat-c.lat)*110540; return {r:Math.hypot(E,N),b:wrap360(Math.atan2(E,N)*R2D)}; };
+  for(const raw of text.split(/\r?\n/)){
+    const line=raw.replace(/\*.*$/,'').trim(); if(!line) continue;
+    if(/^V\s/i.test(line)){ const m=line.slice(1).trim(); if(/^X\s*=/i.test(m)) center=coordsIn(m)[0]||center; else if(/^D\s*=/i.test(m)) dir=/-/.test(m)?-1:1; continue; }
+    const k=line.slice(0,2).toUpperCase(), v=line.slice(2).trim();
+    if(k==='AC'){ push(); cur={cls:v.toUpperCase(),name:'',lo:{ft:0,ref:'AGL',txt:'SFC'},hi:{ft:99999,ref:'MSL',txt:'UNL'},pts:[]}; dir=1; continue; }
+    if(!cur) continue;
+    if(k==='AN') cur.name=v;
+    else if(k==='AL') cur.lo=parseAltOA(v);
+    else if(k==='AH') cur.hi=parseAltOA(v);
+    else if(k==='DP'){ const p=coordsIn(v)[0]; if(p) cur.pts.push(p); }
+    else if(k==='DC'&&center){ cur.pts.push(...arc(center,parseFloat(v)*1852,0,360,1)); }
+    else if(k==='DA'&&center){ const [r,a1,a2]=v.split(',').map(parseFloat); cur.pts.push(...arc(center,r*1852,a1,a2,dir)); }
+    else if(k==='DB'&&center){ const cs=coordsIn(v); if(cs.length===2){ const p1=brgM(center,cs[0]), p2=brgM(center,cs[1]); cur.pts.push(...arc(center,p1.r,p1.b,p2.b,dir)); } }
+  }
+  push();
+  out.forEach(a=>{ a.bb=[Math.min(...a.pts.map(p=>p.lat)),Math.max(...a.pts.map(p=>p.lat)),Math.min(...a.pts.map(p=>p.lon)),Math.max(...a.pts.map(p=>p.lon))]; });
+  return out;
+}
+const EXAMPLE_OA=`* ESEMPI NON REALI, solo per provare la pagina
+AC D
+AN ESEMPIO 1 CTR (non reale)
+AL SFC
+AH 2500ft AMSL
+V X=45:20:00 N 008:02:00 E
+DC 4
+AC R
+AN ESEMPIO 2 AREA R (non reale)
+AL SFC
+AH FL95
+DP 45:26:00 N 007:58:00 E
+DP 45:29:00 N 008:06:00 E
+DP 45:24:00 N 008:09:00 E
+DP 45:21:00 N 008:00:00 E
+AC C
+AN ESEMPIO 3 TMA (non reale)
+AL 3500ft AMSL
+AH FL195
+DP 45:10:00 N 007:40:00 E
+DP 45:40:00 N 007:40:00 E
+DP 45:40:00 N 008:30:00 E
+DP 45:10:00 N 008:30:00 E`;
+let ASP_SRC={real:false,name:'esempi non reali'}, ASP=[];
+(function loadAsp(){ const t=store.get('ia517_openair',null);
+  if(t&&t.text){ ASP=parseOpenAir(t.text); ASP_SRC={real:true,name:t.name,count:ASP.length}; }
+  if(!ASP.length){ ASP=parseOpenAir(EXAMPLE_OA); ASP_SRC={real:false,name:'esempi non reali'}; } })();
+$('aspFile').addEventListener('change',e=>{ const f=e.target.files[0]; if(!f) return; const rd=new FileReader();
+  rd.onload=()=>{ const list=parseOpenAir(String(rd.result)); if(!list.length){ toast('Nessuno spazio aereo trovato: serve un file OpenAir'); return; }
+    ASP=list; ASP_SRC={real:true,name:f.name,count:list.length}; store.set('ia517_openair',{name:f.name,text:String(rd.result)}); toast(`${list.length} spazi aerei caricati`); update(); };
+  rd.readAsText(f); });
+function clsColor(c){ if(/^(P|R)$/.test(c)) return '#ff5a5a'; if(/^(Q|D?ANGER)$/.test(c)) return '#ffc531'; if(/^(CTR|A|B|C|D)$/.test(c)) return '#4f9bff'; if(/^(RMZ|TMZ|E)$/.test(c)) return '#b58cff'; return '#8a96a2'; }
+function clsLabel(a){ const c=a.cls; return {P:'Proibita',R:'Regolamentata',Q:'Pericolosa',CTR:'CTR',A:'Classe A',B:'Classe B',C:'Classe C',D:'Classe D',E:'Classe E',F:'Classe F',G:'Classe G',RMZ:'RMZ',TMZ:'TMZ',W:'Onda',GP:'Vietata alianti'}[c]||c; }
+function pip(p,poly){ let ins=false; for(let i=0,j=poly.length-1;i<poly.length;j=i++){ const a=poly[i], b=poly[j];
+  if(((a.lat>p.lat)!==(b.lat>p.lat)) && (p.lon < (b.lon-a.lon)*(p.lat-a.lat)/(b.lat-a.lat)+a.lon)) ins=!ins; } return ins; }
+
+// profilo verticale: salita ~600 ft/km dalla partenza, discesa ~400 ft/km verso l'arrivo
+function profileAt(x,tot,e0,e1){ return Math.min(PLAN.cruiseFt, e0+1000+600*x, e1+1000+400*(tot-x)); }
+function runBriefing(c){
+  const samples=[]; let acc=0;
+  c.legs.forEach(l=>{ const n=Math.max(2,Math.ceil(l.d/250)); for(let i=0;i<=n;i++){ if(i===0&&samples.length) continue; const t=i/n;
+    samples.push({lat:l.a.lat+(l.b.lat-l.a.lat)*t, lon:l.a.lon+(l.b.lon-l.a.lon)*t, x:(acc+l.d*t)/1000}); } acc+=l.d; });
+  const tot=acc/1000, e0=c.pts.length?(elevInfo(c.pts[0]).use??700):700, e1=c.dst?(elevInfo(c.dst).use??700):700;
+  const gMin=Math.min(e0,e1), gMax=Math.max(e0,e1);
+  const asp=[];
+  for(const a of ASP){
+    let inside=false, st=0; const segs=[];
+    for(const s of samples){ const ins=s.lat>=a.bb[0]&&s.lat<=a.bb[1]&&s.lon>=a.bb[2]&&s.lon<=a.bb[3]&&pip(s,a.pts);
+      if(ins&&!inside){ st=s.x; inside=true; } else if(!ins&&inside){ segs.push([st,s.x]); inside=false; } }
+    if(inside) segs.push([st,tot]);
+    if(!segs.length) continue;
+    const lo=a.lo.ref==='AGL'?a.lo.ft+(a.lo.ft?gMin:0):a.lo.ft, hi=a.hi.ref==='AGL'?a.hi.ft+gMax:a.hi.ft;
+    let pMin=1e9, pMax=-1e9; segs.forEach(([x0,x1])=>{ for(let x=x0;x<=x1+1e-6;x+=0.25){ const h=profileAt(Math.min(x,x1),tot,e0,e1); pMin=Math.min(pMin,h); pMax=Math.max(pMax,h); } });
+    const overlap=pMax>=lo && pMin<=hi;
+    let status, verdict;
+    if(!overlap){
+      if(pMax<lo){ const m=lo-pMax; status=m>=300?'ok':'warn'; verdict=`Passi sotto: base ${a.lo.txt}, tu al massimo ${Math.round(pMax)} ft (margine ${Math.round(m)} ft)`; }
+      else { const m=pMin-hi; status=m>=300?'ok':'warn'; verdict=`Passi sopra: limite ${a.hi.txt}, tu almeno ${Math.round(pMin)} ft (margine ${Math.round(m)} ft)`; }
+    } else if(/^(P)$/.test(a.cls)){ status='bad'; verdict='Area proibita alla tua quota: cambia rotta'; }
+    else if(/^(R)$/.test(a.cls)){ status='bad'; verdict='Area regolamentata alla tua quota: evitala o verifica che non sia attiva (AUP e NOTAM)'; }
+    else if(/^(CTR|A|B|C|D)$/.test(a.cls)){ status='bad'; verdict='Spazio controllato alla tua quota: serve autorizzazione ATC, verifica cosa consente il tuo attestato'; }
+    else if(/^(Q)$/.test(a.cls)){ status='warn'; verdict='Area pericolosa alla tua quota: verifica l\'attività prima del volo'; }
+    else if(/^(RMZ|TMZ|E)$/.test(a.cls)||/ATZ/i.test(a.name)){ status='warn'; verdict='Alla tua quota: contatto radio richiesto, verifica le procedure'; }
+    else { status='ok'; verdict='Alla tua quota, nessun vincolo particolare per la classe'; }
+    asp.push({a,segs,lo,hi,status,verdict});
+  }
+  asp.sort((p,q)=>p.segs[0][0]-q.segs[0][0]);
+  const not=analyzeNotams(samples,c);
+  return {samples,tot,e0,e1,asp,not};
+}
+function renderBriefing(c){
+  const b=BRIEF;
+  $('aspSrc').innerHTML=ASP_SRC.real?`File: <b>${esc(ASP_SRC.name)}</b> · ${ASP_SRC.count} spazi`:'<span class="warn">Spazi aerei di esempio, non reali: carica il file OpenAir aggiornato all\'AIRAC in vigore</span>';
+  $('aspList').innerHTML=b.asp.length?b.asp.map(x=>`<div class="it"><span class="cls" style="color:${clsColor(x.a.cls)}">${esc(clsLabel(x.a))}</span>
+      <span class="t">${esc(x.a.name||'senza nome')}</span>
+      <span class="s">${x.segs.map(s=>`km ${s[0].toFixed(1)}–${s[1].toFixed(1)}`).join(', ')} · da ${esc(x.a.lo.txt)} a ${esc(x.a.hi.txt)}</span>
+      <span class="v ${x.status}">${esc(x.verdict)}</span></div>`).join(''):'<div class="sub">La rotta non attraversa spazi aerei del file caricato.</div>';
+  drawProfile(c,b);
+  renderNotams(b.not);
+  renderElev();
+  const nA=b.asp.filter(x=>x.status==='bad').length, wA=b.asp.filter(x=>x.status==='warn').length;
+  const nN=b.not.filter(x=>x.status==='bad').length, wN=b.not.filter(x=>x.status==='warn').length;
+  const el=planFields().map(elevInfo), nE=el.filter(e=>!e.confirmed).length;
+  const pills=[];
+  pills.push(nA?`<span class="pill bad">Spazi aerei: ${nA} da risolvere</span>`:(wA?`<span class="pill warn">Spazi aerei: ${wA} da verificare</span>`:'<span class="pill ok">Spazi aerei: nessun conflitto</span>'));
+  if(!ASP_SRC.real) pills.push('<span class="pill warn">Spazi aerei di esempio</span>');
+  pills.push(NOTAM_TEXT.trim()?(nN?`<span class="pill bad">NOTAM: ${nN} sulla rotta</span>`:(wN?`<span class="pill warn">NOTAM: ${wN} da leggere</span>`:'<span class="pill ok">NOTAM: nessuno sulla rotta</span>')):'<span class="pill warn">NOTAM non ancora controllati</span>');
+  pills.push(nE?`<span class="pill warn">Quote: ${nE} da confermare</span>`:'<span class="pill ok">Quote confermate</span>');
+  $('bSummary').innerHTML=pills.join('');
+  const todo=nA+nN+(NOTAM_TEXT.trim()?0:1)+(ASP_SRC.real?0:1)+(nE?1:0);
+  $('bLine').innerHTML=todo?`<button class="tolink" type="button" id="goBrief">Briefing: ${todo} ${todo===1?'punto':'punti'} da controllare →</button>`:'<span class="sent">Briefing: nessun punto aperto</span>';
+  const g=$('goBrief'); if(g) g.addEventListener('click',()=>{ location.hash='briefing'; showTab('briefing'); });
+}
+const pv=$('prof'), pc=pv.getContext('2d');
+function drawProfile(c,b){
+  const W=pv.width, H=pv.height, L=84, Rm=14, T=16, B=40, tot=Math.max(b.tot,1);
+  const top=Math.max(PLAN.cruiseFt+2500, ...b.asp.map(x=>Math.min(x.lo+1500,x.hi<99999?x.hi+500:0)), 4000), yMax=Math.min(top,12000);
+  const X=x=>L+(x/tot)*(W-L-Rm), Y=f=>H-B-(Math.min(f,yMax)/yMax)*(H-B-T);
+  pc.clearRect(0,0,W,H); pc.fillStyle='#0a0f14'; pc.fillRect(0,0,W,H);
+  pc.font='500 22px "Barlow Semi Condensed",sans-serif'; pc.fillStyle='#8a96a2'; pc.strokeStyle='rgba(255,255,255,.07)'; pc.lineWidth=1;
+  const stepF=yMax>8000?2000:1000; pc.textAlign='right'; pc.textBaseline='middle';
+  for(let f=0;f<=yMax;f+=stepF){ pc.beginPath(); pc.moveTo(L,Y(f)); pc.lineTo(W-Rm,Y(f)); pc.stroke(); pc.fillText(f+' ft',L-8,Y(f)); }
+  const stepK=tot>60?20:(tot>25?10:5); pc.textAlign='center'; pc.textBaseline='top';
+  for(let x=0;x<=tot+0.01;x+=stepK){ pc.fillText(x+' km',X(x),H-B+8); }
+  // spazi aerei
+  for(const x of b.asp){ const col=clsColor(x.a.cls);
+    for(const [x0,x1] of x.segs){ const y0=Y(x.lo), y1=Y(Math.min(x.hi,yMax)); pc.globalAlpha=.2; pc.fillStyle=col; pc.fillRect(X(x0),y1,X(x1)-X(x0),y0-y1);
+      pc.globalAlpha=1; pc.strokeStyle=col; pc.lineWidth=2; pc.strokeRect(X(x0),y1,X(x1)-X(x0),y0-y1);
+      if(X(x1)-X(x0)>70){ pc.fillStyle=col; pc.font='700 20px "Barlow Semi Condensed",sans-serif'; pc.textAlign='left'; pc.textBaseline='top';
+        pc.fillText((x.a.name||x.a.cls).slice(0,Math.floor((X(x1)-X(x0))/10)),X(x0)+6,Math.max(T,y1)+4); } } }
+  // terreno noto ai due estremi
+  pc.fillStyle='#2b3b2a'; pc.beginPath(); pc.moveTo(X(0),Y(0)); pc.lineTo(X(0),Y(b.e0)); pc.lineTo(X(tot),Y(b.e1)); pc.lineTo(X(tot),Y(0)); pc.closePath(); pc.fill();
+  // profilo
+  pc.strokeStyle='#ff4fd8'; pc.lineWidth=4; pc.beginPath();
+  for(let i=0;i<=200;i++){ const x=tot*i/200, h=profileAt(x,tot,b.e0,b.e1); i?pc.lineTo(X(x),Y(h)):pc.moveTo(X(x),Y(h)); } pc.stroke();
+  pc.fillStyle='#e5ecf1'; pc.font='700 22px "Barlow Semi Condensed",sans-serif'; pc.textBaseline='bottom';
+  pc.textAlign='left'; if(c.pts[0]) pc.fillText(c.pts[0].short,X(0)+4,Y(b.e0)-6);
+  pc.textAlign='right'; if(c.dst) pc.fillText(c.dst.short,X(tot)-4,Y(b.e1)-6);
+  pc.fillStyle='#8a96a2'; pc.font='500 18px "Barlow Semi Condensed",sans-serif'; pc.textAlign='left'; pc.textBaseline='top';
+  pc.fillText('terreno intermedio non disegnato: sullo strumento dal DEM',L+4,T);
+}
+
+// ---------------- NOTAM ----------------
+let NOTAM_TEXT=store.get('ia517_notam','')||'';
+$('notamIn').value=NOTAM_TEXT;
+const QSUB={OB:'Ostacolo',OL:'Luci ostacolo',RD:'Area pericolosa',RR:'Area regolamentata',RP:'Area proibita',RT:'Area riservata temporanea',RA:'Spazio riservato',
+  WP:'Lanci paracadutisti',WU:'Droni',WE:'Esercitazioni',WM:'Tiri',WB:'Acrobazia',WL:'Palloni',WA:'Manifestazione aerea',WG:'Volo a vela',WJ:'Traino striscioni',
+  MR:'Pista',MX:'Via di rullaggio',FA:'Aeroporto',AC:'Spazio controllato',AT:'TMA',AE:'CTA',AZ:'ATZ',CT:'Servizio radio',NV:'Radioassistenza',GA:'GNSS',GW:'GNSS'};
+function utcFrom(s){ if(!s||!/^\d{10}$/.test(s)) return null; return new Date(Date.UTC(2000+ +s.slice(0,2),+s.slice(2,4)-1,+s.slice(4,6),+s.slice(6,8),+s.slice(8,10))); }
+function parseNotams(text){
+  const lines=text.split(/\r?\n/), blocks=[]; let cur=[];
+  for(const l of lines){ if(/^\s*\(?[A-Z]\d{4}\/\d{2}/.test(l)&&cur.length){ blocks.push(cur.join('\n')); cur=[]; } if(l.trim()||cur.length) cur.push(l); }
+  if(cur.length) blocks.push(cur.join('\n'));
+  return blocks.map(t=>t.trim()).filter(Boolean).map(t=>{
+    const o={raw:t,id:(t.match(/[A-Z]\d{4}\/\d{2}/)||['NOTAM'])[0]};
+    const q=t.match(/Q\)\s*([A-Z]{4})\/Q([A-Z]{2})([A-Z]{2})\/[A-Z]*\/[A-Z]*\/[A-Z]*\/(\d{3})\/(\d{3})\/(\d{2})(\d{2})([NS])(\d{3})(\d{2})([EW])(\d{3})/);
+    if(q){ o.fir=q[1]; o.subj=q[2]; o.cond=q[3]; o.lo=+q[4]*100; o.hi=+q[5]*100;
+      o.lat=(+q[6]+ +q[7]/60)*(q[8]==='S'?-1:1); o.lon=(+q[9]+ +q[10]/60)*(q[11]==='W'?-1:1); o.rNM=+q[12]; }
+    const a=t.match(/A\)\s*([A-Z]{4}(?:\s+[A-Z]{4})*)/); if(a) o.loc=a[1].split(/\s+/);
+    const bb=t.match(/B\)\s*(\d{10})/), cc=t.match(/C\)\s*(\d{10}|PERM)/);
+    o.from=utcFrom(bb&&bb[1]); o.to=cc?(cc[1]==='PERM'?null:utcFrom(cc[1])):null; o.perm=!!(cc&&cc[1]==='PERM');
+    const e=t.match(/E\)\s*([\s\S]*?)(?:\n\s*[FG]\)|$)/); o.text=e?e[1].trim():'';
+    return o; });
+}
+function distToRoute(p,samples){ let m=1e12; for(const s of samples){ const d=dist(p,s).d; if(d<m) m=d; } return m; }
+function analyzeNotams(samples,c){
+  if(!NOTAM_TEXT.trim()) return [];
+  const dep=new Date(PLAN.dep), arr=new Date(dep.getTime()+(c.min+20)*60e3), ids=new Set(planFields().map(f=>f.id));
+  return parseNotams(NOTAM_TEXT).map(n=>{
+    const timeOk=!n.from || (n.from<=arr && (n.perm||!n.to||n.to>=dep));
+    let where='posizione non indicata', near=false, onRoute=false, fir=false;
+    if(n.lat!=null){ if(n.rNM>=999){ fir=true; where='tutta la FIR'; }
+      else { const d=distToRoute(n,samples), r=n.rNM*1852; onRoute=d<=r+2000; near=!onRoute&&d<=r+10000; where=onRoute?'sulla rotta':(near?`a ${((d-r)/1000).toFixed(0)} km dalla rotta`:`lontano dalla rotta (${(d/1000).toFixed(0)} km)`); } }
+    const vert=n.lo==null || n.lo<=PLAN.cruiseFt+1000;
+    const atField=n.loc&&n.loc.some(x=>ids.has(x));
+    let status='ok';
+    if(timeOk&&vert&&(onRoute||atField)) status='bad'; else if(timeOk&&vert&&(near||fir)) status='warn';
+    const verdict=!timeOk?'Non attivo nell\'orario del volo':(!vert?`Sopra la tua quota (da ${n.lo} ft)`:(atField?'Riguarda un campo del piano':where.charAt(0).toUpperCase()+where.slice(1)));
+    return {...n,status,verdict,where};
+  }).sort((p,q)=>({bad:0,warn:1,ok:2}[p.status]-{bad:0,warn:1,ok:2}[q.status]));
+}
+const fmtUtc=d=>d?d.toLocaleString('it-IT',{day:'2-digit',month:'2-digit',hour:'2-digit',minute:'2-digit'}):'';
+function renderNotams(list){
+  if(!NOTAM_TEXT.trim()){ $('notamList').innerHTML='<div class="sub">Nessun NOTAM inserito.</div>'; return; }
+  $('notamList').innerHTML=list.length?list.map(n=>`<div class="it"><span class="cls ${n.status}">${n.status==='bad'?'ROTTA':(n.status==='warn'?'VICINO':'OK')}</span>
+    <span class="t">${esc(n.id)} · ${esc(QSUB[n.subj]||n.subj||'NOTAM')}</span>
+    <span class="v ${n.status}">${esc(n.verdict)}</span>
+    <span class="s">${n.from?`dal ${fmtUtc(n.from)} `:''}${n.perm?'permanente':(n.to?`al ${fmtUtc(n.to)} (ora locale)`:'')}${n.lo!=null?` · da ${n.lo} a ${n.hi} ft`:''}${n.rNM!=null&&n.rNM<999?` · raggio ${n.rNM} NM`:''}</span>
+    <div class="raw2">${esc(n.text||n.raw)}</div></div>`).join(''):'<div class="sub">Nessun NOTAM riconosciuto nel testo.</div>';
+}
+function exampleNotams(){
+  const z=n=>String(n).padStart(2,'0'), f=d=>`${z(d.getUTCFullYear()%100)}${z(d.getUTCMonth()+1)}${z(d.getUTCDate())}${z(d.getUTCHours())}${z(d.getUTCMinutes())}`;
+  const now=new Date(), d0=new Date(now.getTime()-86400e3), d1=new Date(now.getTime()+20*86400e3), w0=new Date(now.getTime()+3600e3*0.5), w1=new Date(now.getTime()+3600e3*8);
+  return `A9001/26 NOTAMN
+Q) LIMM/QOBCE/IV/M/AE/000/005/4519N00757E001
+A) LIMM B) ${f(d0)} C) ${f(d1)}
+E) ESEMPIO NON REALE. GRU ERETTA, ALTEZZA 150FT AGL, 1200FT AMSL.
+
+A9002/26 NOTAMN
+Q) LIMM/QWPLW/IV/M/W/000/060/4524N00808E003
+A) LIMM B) ${f(w0)} C) ${f(w1)}
+E) ESEMPIO NON REALE. LANCI PARACADUTISTI ENTRO 3NM DAL PUNTO, SFC-6000FT AMSL.
+
+A9003/26 NOTAMN
+Q) LIMM/QRDCA/IV/BO/W/000/120/4505N00730E005
+A) LIMM B) ${f(d0)} C) ${f(d1)}
+E) ESEMPIO NON REALE. AREA PERICOLOSA ATTIVA, SFC-FL120.`;
+}
+$('notamGo').addEventListener('click',()=>{ NOTAM_TEXT=$('notamIn').value; store.set('ia517_notam',NOTAM_TEXT); update(); toast(NOTAM_TEXT.trim()?'NOTAM analizzati':'Nessun NOTAM da analizzare'); });
+$('notamEx').addEventListener('click',()=>{ $('notamIn').value=exampleNotams(); NOTAM_TEXT=$('notamIn').value; update(); toast('Caricati 3 NOTAM di esempio, non reali'); });
+let BRIEF=null;
+
+// ---------------- invio ----------------
+function payload(c){
+  const used=new Set([...c.pts.map(f=>f.id),PLAN.alt].filter(Boolean));
+  return {type:'plan',v:1,created:new Date().toISOString(),
+    route:c.pts.map(f=>{ const e=elevInfo(f); return {id:f.id,name:f.short,lat:f.lat,lon:f.lon,elevFt:e.use,elevConfirmed:!!e.confirmed}; }),
+    departureLocal:PLAN.dep,
+    briefing:(()=>{ const b=BRIEF||{}; return {airspaceSource:ASP_SRC.real?ASP_SRC.name:'esempio',airspaces:(b.asp||[]).filter(x=>x.status!=='ok').map(x=>({name:x.a.name,cls:x.a.cls,from_km:+x.segs[0][0].toFixed(1),to_km:+x.segs[x.segs.length-1][1].toFixed(1),verdict:x.verdict})),
+      notams:(b.not||[]).filter(n=>n.status!=='ok').map(n=>({id:n.id,verdict:n.verdict}))}; })(),dest:PLAN.dest,alternate:PLAN.alt||null,
+    cruiseFt:PLAN.cruiseFt,tasKmh:PLAN.tas,fuel:{onboardL:PLAN.fuel,burnLh:PLAN.burn,reserveMin:PLAN.res,neededL:+c.need.toFixed(1)},
+    fieldNotes:Object.fromEntries(Object.entries(NOTES).filter(([id])=>used.has(id)||true))};
+}
+let sentAt=null;
+function markDirty(){ if(sentAt){ $('sentMsg').hidden=false; $('sentMsg').style.color='var(--warn)'; $('sentMsg').textContent='Modificato dopo l\'invio: invia di nuovo'; } }
+$('send').addEventListener('click',sendPlan);
+
+// ---------------- stato strumento (simulato) ----------------
+function renderStatus(){
+  if(ONLINE && LAST_STATUS) return renderLiveStatus(LAST_STATUS);
+  const rows=[['ok','Collegamento','hotspot I-A517-LINK · 192.168.81.47'],['ok','GPS interno M10','14 satelliti · HDOP 0.8'],['ok','Garmin GLO 2','Bluetooth collegato'],
+    ['ok','Scheda sensori','assetto 25 Hz · firmware 1.0.0'],['warn','Pitot','tara a terra da rifare dopo il montaggio'],['ok','Mappe','campi 108 · Piemonte e Valle d’Aosta']];
+  $('status').innerHTML=rows.map(([s,a,b])=>`<div class="st"><span class="dot" style="background:var(--${s});box-shadow:none"></span><b>${a}</b><span class="v">${b}</span></div>`).join('');
+}
+
+// ---------------- generale ----------------
+let toastT=null;
+function toast(m){ const t=$('toast'); t.textContent=m; t.classList.add('show'); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove('show'),2600); }
+function update(){
+  store.set('ia517_plan',PLAN);
+  const c=compute(); renderPlan(c); drawMap(c);
+  const f=byId(PLAN.dest), {w}=f?nearestWx(f):{w:null};
+  $('arrival').innerHTML=arrivalHTML(f,(w&&!w.vrb)?{dir:w.dir,kmh:w.kmh}:null,w?w.id:'');
+  BRIEF=runBriefing(c); renderBriefing(c);
+  $('json').textContent=JSON.stringify(payload(c),null,2);
+  renderWx(); markDirty();
+}
+const TABS=['piano','briefing','campi','meteo','strumento'];
+function showTab(t){ if(!TABS.includes(t)) t='piano';
+  TABS.forEach(x=>{ $('tab-'+x).hidden=x!==t; }); document.querySelectorAll('nav.tabs button').forEach(b=>b.setAttribute('aria-selected',b.dataset.tab===t));
+  if(t==='campi') renderFields(); window.scrollTo(0,0); }
+document.querySelectorAll('nav.tabs button').forEach(b=>b.addEventListener('click',()=>{ location.hash=b.dataset.tab; showTab(b.dataset.tab); }));
+window.addEventListener('hashchange',()=>showTab(location.hash.slice(1)));
+// ---------------- collegamento con lo strumento ----------------
+// Il telefono parla con il servizio del Raspberry (stesso indirizzo da cui arriva questa pagina).
+// Se il collegamento manca, quello che invii resta in coda sul telefono e parte da solo appena torna.
+KIND_TXT.wp='punto';
+let ONLINE=false, LAST_STATUS=null, ROUTES=store.get('ia517_routes_app',[]), USERF=store.get('ia517_userfields_app',[]);
+let PENDING=store.get('ia517_pending',[]);
+const CAN_LINK=PHONE || /^https?:$/.test(location.protocol) && !/claude\.ai$|claudeusercontent\.com$/.test(location.hostname);
+async function api(method,path,body){
+  if(PHONE) return parent.IA517.api(method,path,body);
+  const ctl=new AbortController(), t=setTimeout(()=>ctl.abort(),5000);
+  try{
+    const r=await fetch(path,{method,signal:ctl.signal,cache:'no-store',headers:body?{'Content-Type':'application/json'}:{},body:body?JSON.stringify(body):undefined});
+    let j=null; try{ j=await r.json(); }catch(e){}
+    if(!r.ok) throw Object.assign(new Error((j&&j.error)||('errore '+r.status)),{http:r.status});
+    return j||{};
+  } finally { clearTimeout(t); }
+}
+function setLink(){
+  const l=$('link'); l.classList.toggle('off',!ONLINE);
+  $('linkTxt').textContent=ONLINE?(PHONE?'Su questo telefono':'Collegato allo strumento'):(CAN_LINK?'Strumento non raggiungibile':'Anteprima · non collegato');
+  $('demoBanner').hidden=ONLINE;
+  const n=PENDING.length; $('sentMsg').dataset.pend=n;
+}
+async function probe(){
+  if(!CAN_LINK){ setLink(); return; }
+  try{
+    LAST_STATUS=await api('GET','/api/status');
+    if(!ONLINE){ ONLINE=true; setLink(); await pullData(); }
+    await flushPending();
+  }catch(e){ if(ONLINE){ ONLINE=false; toast('Strumento non raggiungibile: quello che invii parte quando torna'); } setLink(); }
+  renderStatus();
+}
+async function pullData(){
+  try{ const f=await api('GET','/api/fields'); USERF=f.fields||[]; store.set('ia517_userfields_app',USERF); mergeUserFields(); }catch(e){}
+  try{ const r=await api('GET','/api/routes'); ROUTES=r.routes||[]; store.set('ia517_routes_app',ROUTES); }catch(e){}
+  renderSaved(); renderUser(); renderRoute(); renderFields();
+}
+// operazioni da fare sullo strumento: subito se c'è collegamento, altrimenti in coda
+async function op(method,path,body,label){
+  if(ONLINE){
+    try{ return await api(method,path,body); }
+    catch(e){ if(e.http) throw e; ONLINE=false; setLink(); }   // errore di rete: si mette in coda
+  }
+  PENDING=PENDING.filter(x=>!(x.path===path && x.method===method && path==='/api/plan'));   // del piano conta solo l'ultimo
+  PENDING.push({method,path,body,label,at:Date.now()}); store.set('ia517_pending',PENDING);
+  return {queued:true};
+}
+async function flushPending(){
+  while(PENDING.length && ONLINE){
+    const x=PENDING[0];
+    try{ await api(x.method,x.path,x.body); toast('Inviato: '+x.label); }
+    catch(e){ if(!e.http){ ONLINE=false; setLink(); return; } toast('Rifiutato dallo strumento: '+x.label+' · '+e.message); }
+    PENDING.shift(); store.set('ia517_pending',PENDING);
+  }
+}
+
+// ---------------- piano e rotte ----------------
+function routeFromPlan(){
+  const c=compute();
+  return {name:(c.pts.length?c.pts[0].short+' › '+c.pts[c.pts.length-1].short:'Rotta').slice(0,60),cruiseFt:PLAN.cruiseFt,
+    wps:c.pts.map(f=>({id:f.id.slice(0,16),name:f.short.slice(0,40),lat:+f.lat.toFixed(6),lon:+f.lon.toFixed(6),field:f.kind!=='wp'}))};
+}
+function notesForInstrument(){
+  const out={};
+  for(const [id,n] of Object.entries(NOTES)){ if(!n) continue;
+    out[id]={elevFt:n.elevFt??null,pref:n.pref||null,side:n.side||{},maxTail:n.maxTail??null,warn:n.warn||{},text:[n.text,n.obst,n.freq&&('freq '+n.freq)].filter(Boolean).join(' · ').slice(0,300)}; }
+  return out;
+}
+async function sendPlan(){
+  const b=$('send'); b.disabled=true; b.textContent='Invio…';
+  const r=routeFromPlan(), msg=$('sentMsg'); msg.hidden=false; msg.style.color='';
+  try{
+    if(r.wps.length<2) throw new Error('servono almeno partenza e arrivo');
+    let noteErr='';
+    try{ await op('POST','/api/notes',notesForInstrument(),'note dei campi'); }catch(e){ noteErr=' Note dei campi non accettate: '+e.message+'.'; }
+    const res=await op('POST','/api/plan',{route:r},'rotta '+r.name);
+    sentAt=new Date(); const hh=sentAt.toLocaleTimeString('it-IT',{hour:'2-digit',minute:'2-digit'});
+    if(res.queued){ msg.style.color='var(--warn)'; msg.textContent=CAN_LINK?`Strumento non raggiungibile: la rotta parte da sola appena il telefono si ricollega (${hh}).`:'Anteprima: qui non c\'è uno strumento collegato. Sul Raspberry la rotta arriva subito.'; }
+    else { msg.textContent=`Ricevuta dallo strumento alle ${hh}: ${r.wps.length} punti. A terra è già attiva; in volo lo strumento chiede conferma (premi = sì).${noteErr}`; if(noteErr) msg.style.color='var(--warn)'; toast('Rotta inviata'); }
+  }catch(e){ msg.style.color='var(--bad)'; msg.textContent='Non inviata: '+e.message; }
+  finally{ b.disabled=false; b.textContent='Invia allo strumento'; }
+}
+async function sendQnh(q){
+  try{ const r=await op('POST','/api/cmd',{line:'$SETUP,QNH,'+q},'QNH '+q);
+    toast(r.queued?(CAN_LINK?`QNH ${q} in coda: parte appena collegato`:`Anteprima: QNH ${q} non inviato`):`QNH ${q} inviato: confermalo con la manopola`); }
+  catch(e){ toast('QNH non inviato: '+e.message); }
+}
+function routeKm(r){ let d=0; for(let i=1;i<r.wps.length;i++) d+=dist(r.wps[i-1],r.wps[i]).d; return d/1000; }
+function renderSaved(){
+  const list=ROUTES.slice().sort((a,b)=>(b.updated||0)-(a.updated||0));
+  $('savedRoutes').innerHTML=list.length?list.map(r=>`<div class="rl"><span class="n">${esc(r.name)}</span>
+      <span class="b"><button class="btn" type="button" data-load="${esc(r.id)}">Apri</button><button class="btn pri" type="button" data-fly="${esc(r.id)}">Vola</button><button class="btn" type="button" data-del="${esc(r.id)}" aria-label="Elimina ${esc(r.name)}">×</button></span>
+      <span class="m">${r.wps.map(w=>esc(w.name)).join(' › ')} · ${routeKm(r).toFixed(0)} km</span></div>`).join('')
+    :'<div class="sub">Nessuna rotta salvata.</div>';
+  const find=id=>ROUTES.find(x=>x.id===id);
+  $('savedRoutes').querySelectorAll('[data-load]').forEach(b=>b.addEventListener('click',()=>loadRoute(find(b.dataset.load))));
+  $('savedRoutes').querySelectorAll('[data-fly]').forEach(b=>b.addEventListener('click',async()=>{ const r=find(b.dataset.fly);
+    try{ const res=await op('POST','/api/plan',{route:r},'rotta '+r.name); toast(res.queued?'In coda: parte appena collegato':'Rotta inviata allo strumento'); }catch(e){ toast('Non inviata: '+e.message); } }));
+  $('savedRoutes').querySelectorAll('[data-del]').forEach(b=>b.addEventListener('click',async()=>{ const r=find(b.dataset.del); if(!confirm('Eliminare la rotta '+r.name+'?')) return;
+    ROUTES=ROUTES.filter(x=>x.id!==r.id); store.set('ia517_routes_app',ROUTES); renderSaved();
+    try{ await op('DELETE','/api/routes/'+encodeURIComponent(r.id),null,'elimina '+r.name); }catch(e){} }));
+}
+function loadRoute(r){
+  const ids=r.wps.map(w=>{ let f=byId(w.id); if(!f){ f=wpToField(w); FIELDS.push(f); } return f.id; });
+  PLAN.from=ids[0]; PLAN.dest=ids[ids.length-1]; PLAN.wps=ids.slice(1,-1); if(r.cruiseFt){ PLAN.cruiseFt=r.cruiseFt; $('pAlt').value=r.cruiseFt; }
+  renderRoute(); update(); window.scrollTo(0,0); toast('Rotta aperta: '+r.name);
+}
+function wpToField(w){ return {id:w.id,short:String(w.name).toUpperCase().slice(0,14),name:w.name,lat:w.lat,lon:w.lon,elft:null,kind:'wp',rw:[],ends:[],user:true}; }
+$('saveRoute').addEventListener('click',async()=>{
+  const r=routeFromPlan(); if(r.wps.length<2){ toast('Servono almeno partenza e arrivo'); return; }
+  const nm=prompt('Nome della rotta',r.name); if(nm===null) return; r.name=(nm.trim()||r.name).slice(0,60);
+  r.id='R-'+Date.now().toString(36).toUpperCase(); r.updated=Math.floor(Date.now()/1000);
+  ROUTES=ROUTES.filter(x=>x.id!==r.id).concat([r]); store.set('ia517_routes_app',ROUTES); renderSaved();
+  try{ const res=await op('POST','/api/routes',r,'rotta '+r.name); toast(res.queued?'Salvata sul telefono: va allo strumento appena collegato':'Rotta salvata anche sullo strumento'); }
+  catch(e){ toast('Non salvata sullo strumento: '+e.message); }
+});
+
+// ---------------- campi nuovi ----------------
+const BASE_IDS=new Set(FIELDS.map(f=>f.id));
+function userToField(u){
+  const f={id:u.id,short:u.short,name:u.name||u.short,lat:u.lat,lon:u.lon,elft:u.elevFt??null,kind:u.kind||'ulm',user:true,
+    rw:(u.runways||[]).map(r=>({le:r.le,he:r.he,hdg:r.hdg,L:r.len,paved:!!r.paved}))};
+  f.ends=[]; f.rw.forEach(r=>{ f.ends.push({id:r.le,hdg:r.hdg}); f.ends.push({id:r.he,hdg:wrap360(r.hdg+180)}); });
+  return f;
+}
+function mergeUserFields(){
+  for(let i=FIELDS.length-1;i>=0;i--) if(FIELDS[i].user) FIELDS.splice(i,1);
+  for(const u of USERF){ const f=userToField(u), i=FIELDS.findIndex(x=>x.id===f.id); if(i>=0) FIELDS[i]=f; else FIELDS.push(f); }
+}
+function rwRow(r){ r=r||{}; return `<div class="rwrow">
+  <div class="fld"><label>Pista (es. 07)</label><input class="rwLe" type="text" maxlength="3" autocapitalize="characters" value="${esc(r.le||'')}" placeholder="07"></div>
+  <div class="fld"><label>Lunghezza (m)</label><input class="rwLen" type="number" inputmode="numeric" step="10" value="${r.len||''}" placeholder="350"></div>
+  <div class="fld"><label>Rotta vera (°)</label><input class="rwHdg" type="number" inputmode="numeric" step="1" value="${r.hdg??''}" placeholder="auto"></div>
+  <label class="chk"><input class="rwPav" type="checkbox"${r.paved?' checked':''}>asfalto</label></div>`; }
+function addRwRow(r){ if($('nfRws').children.length>=4){ toast('Al massimo 4 piste da qui'); return; } $('nfRws').insertAdjacentHTML('beforeend',rwRow(r)); }
+$('nfAddRw').addEventListener('click',()=>addRwRow());
+function parsePos(t){
+  t=t.trim(); const d=t.match(/^(-?\d{1,2}(?:[.,]\d+)?)\s*[,; ]\s*(-?\d{1,3}(?:[.,]\d+)?)$/);
+  if(d) return {lat:+d[1].replace(',','.'),lon:+d[2].replace(',','.')};
+  const c=coordsIn(t); return c.length?c[0]:null;
+}
+$('nfHere').addEventListener('click',async()=>{
+  if(!ONLINE){ toast(CAN_LINK?'Strumento non raggiungibile':'Anteprima: serve lo strumento collegato'); return; }
+  try{ const s=await api('GET','/api/status');
+    if(!s.fix || s.fix.age_s>10){ toast('Lo strumento non ha una posizione GPS valida'); return; }
+    $('nfPos').value=s.fix.lat.toFixed(6)+', '+s.fix.lon.toFixed(6); toast('Posizione dello strumento'+(s.fix.gs_kmh>5?` (in movimento, ${s.fix.gs_kmh} km/h)`:'')); }
+  catch(e){ toast('Posizione non letta: '+e.message); }
+});
+$('nfFrom').addEventListener('click',()=>{ const s=$('nfCopy'); s.innerHTML='<option value="">Scegli il campo…</option>'+fieldOptions(''); s.hidden=false; s.focus(); });
+$('nfCopy').addEventListener('change',()=>{ const f=byId($('nfCopy').value); if(!f) return;
+  $('nfPos').value=f.lat.toFixed(6)+', '+f.lon.toFixed(6); if(!$('nfShort').value) $('nfShort').value=f.short; if(!$('nfName').value) $('nfName').value=f.name;
+  if(f.elft!=null && !$('nfElev').value) $('nfElev').value=f.elft; $('nfCopy').dataset.id=f.id; $('nfCopy').hidden=true;
+  $('nfMsg').textContent=`Stesso codice di ${f.short}: le piste che aggiungi si sommano a quelle dei dati e lo strumento usa questa versione.`; });
+$('nfSave').addEventListener('click',async()=>{
+  const msg=$('nfMsg'); msg.style.color='var(--bad)';
+  try{
+    const short=$('nfShort').value.trim().toUpperCase(); if(!short) throw new Error('manca la sigla');
+    const p=parsePos($('nfPos').value); if(!p||!isFinite(p.lat)||!isFinite(p.lon)) throw new Error('posizione non leggibile');
+    if(PHONE?(p.lat<30||p.lat>72||p.lon<-25||p.lon>45):(p.lat<35||p.lat>48||p.lon<5||p.lon>19)) throw new Error('posizione fuori zona');
+    const runways=[];
+    $('nfRws').querySelectorAll('.rwrow').forEach(row=>{
+      const le=row.querySelector('.rwLe').value.trim().toUpperCase(); if(!le) return;
+      const m=le.match(/^(\d{1,2})([LRC]?)$/); if(!m||+m[1]<1||+m[1]>36) throw new Error('pista '+le+': numero da 01 a 36');
+      const n=+m[1], o=((n+17)%36)+1, sfx={L:'R',R:'L',C:'C','':''}[m[2]];
+      const len=+row.querySelector('.rwLen').value; if(!(len>=100&&len<=5000)) throw new Error('pista '+le+': lunghezza da 100 a 5000 m');
+      const h=row.querySelector('.rwHdg').value; const hdg=h===''?n*10:+h; if(!(hdg>=0&&hdg<=360)) throw new Error('pista '+le+': rotta non valida');
+      const a=String(n).padStart(2,'0')+m[2], b=String(o).padStart(2,'0')+sfx;
+      runways.push(n<=18?{le:a,he:b,hdg,len,paved:row.querySelector('.rwPav').checked?1:0}:{le:b,he:a,hdg:wrap360(hdg-180),len,paved:row.querySelector('.rwPav').checked?1:0});
+    });
+    const copyId=$('nfCopy').dataset.id, base=copyId?byId(copyId):null;
+    const prev=base&&base.rw.length?base.rw.map(r=>({le:r.le,he:r.he,hdg:r.hdg,len:r.L,paved:r.paved?1:0})).filter(r=>!runways.some(x=>x.le===r.le)):[];
+    const ev=$('nfElev').value;
+    const u={id:copyId||('U-'+Date.now().toString(36).toUpperCase()),short:short.slice(0,14),name:($('nfName').value.trim()||short).slice(0,40),lat:+p.lat.toFixed(6),lon:+p.lon.toFixed(6),
+      elevFt:ev===''?null:Math.round(+ev),kind:runways.length||prev.length?(base&&base.kind!=='wp'?base.kind:'ulm'):'wp',runways:prev.concat(runways).slice(0,6),source:'telefono'};
+    USERF=USERF.filter(x=>x.id!==u.id).concat([u]); store.set('ia517_userfields_app',USERF); mergeUserFields();
+    const res=await op('POST','/api/fields',u,'campo '+u.short);
+    msg.style.color=res.queued?'var(--warn)':'var(--ok)';
+    msg.textContent=res.queued?(CAN_LINK?`${u.short} salvato sul telefono: va allo strumento appena collegato.`:`Anteprima: ${u.short} salvato solo qui.`):`${u.short} è sullo strumento: lo trovi in DIRECT TO e in NUOVA ROTTA.`;
+    ['nfShort','nfName','nfPos','nfElev'].forEach(id=>$(id).value=''); delete $('nfCopy').dataset.id; $('nfRws').innerHTML=''; addRwRow();
+    renderUser(); renderRoute(); renderFields();
+  }catch(e){ msg.textContent=(e.http?'Rifiutato dallo strumento: ':'Da correggere: ')+e.message; }
+});
+function renderUser(){
+  $('ufList').innerHTML=USERF.length?USERF.map(u=>`<div class="rl"><span class="n">${esc(u.short)}${BASE_IDS.has(u.id)?' <span class="sub">(corregge i dati)</span>':''}</span>
+      <span class="b"><button class="btn" type="button" data-udel="${esc(u.id)}" aria-label="Elimina ${esc(u.short)}">×</button></span>
+      <span class="m">${esc(u.name)} · ${u.lat.toFixed(4)}, ${u.lon.toFixed(4)} · ${u.runways&&u.runways.length?u.runways.map(r=>r.le+'/'+r.he+' '+r.len+' m').join(', '):'senza pista'}${u.elevFt!=null?' · '+u.elevFt+' ft':''}${u.source?' · da '+esc(u.source):''}</span></div>`).join('')
+    :'<div class="sub">Nessuno. Quelli salvati dalla manopola o rilevati in volo compaiono qui.</div>';
+  $('ufList').querySelectorAll('[data-udel]').forEach(b=>b.addEventListener('click',async()=>{ const u=USERF.find(x=>x.id===b.dataset.udel); if(!confirm('Eliminare '+u.short+'?')) return;
+    USERF=USERF.filter(x=>x.id!==u.id); store.set('ia517_userfields_app',USERF); mergeUserFields(); renderUser(); renderRoute(); renderFields();
+    try{ await op('DELETE','/api/fields/'+encodeURIComponent(u.id),null,'elimina '+u.short); }catch(e){} }));
+}
+
+// ---------------- stato vero dello strumento ----------------
+function renderLiveStatus(s){
+  if(s.rows){ $('status').innerHTML=s.rows.map(([st,a,b])=>`<div class="st"><span class="dot" style="background:var(--${st});box-shadow:none"></span><b>${a}</b><span class="v">${esc(b)}</span></div>`).join(''); return; }
+  const age=a=>a==null?'mai':(a<2?'adesso':a.toFixed(0)+' s fa');
+  const port=(n,label)=>{ const p=s.ports&&s.ports[n]; if(!p) return null;
+    const ok=p.open&&p.age_s!=null&&p.age_s<3; return [ok?'ok':(p.open?'warn':'bad'),label,p.open?('dati '+age(p.age_s)):'non collegato']; };
+  const rows=[['ok','Collegamento','servizio '+s.version+' · acceso da '+Math.round(s.uptime_s/60)+' min'],
+    port('sensori','Scheda sensori'),port('gps','GPS interno'),port('glo2','Garmin GLO 2'),
+    s.fix?[s.fix.age_s<5?'ok':'warn','Posizione',`${s.fix.lat.toFixed(4)}, ${s.fix.lon.toFixed(4)} · ${age(s.fix.age_s)}`]:['warn','Posizione','nessun fix GPS'],
+    s.sensori?['ok','Stato scheda',s.sensori.stat]:null,
+    [s.clients&&s.clients.pfd?'ok':'bad','Pagina dello strumento',s.clients&&s.clients.pfd?('attiva · battito '+age(s.kiosk_hb_age_s)):'non collegata'],
+    ['ok','Dati salvati',`${s.fields} campi tuoi · ${s.routes} rotte`],
+    [PENDING.length?'warn':'ok','In coda sul telefono',PENDING.length?PENDING.map(x=>x.label).join(', '):'niente']].filter(Boolean);
+  $('status').innerHTML=rows.map(([st,a,b])=>`<div class="st"><span class="dot" style="background:var(--${st});box-shadow:none"></span><b>${a}</b><span class="v">${esc(b)}</span></div>`).join('');
+}
+
+// =====================================================================================
+//  App del piano dentro la versione telefono: i dati vanno allo strumento sullo stesso
+//  telefono; meteo da Open-Meteo (modello sui campi della rotta), METAR da incollare.
+// =====================================================================================
+window.IA517_refresh=()=>{ try{ pullData(); }catch(e){} };
+window.IA517_asp=()=>ASP_SRC.real?ASP:[];          // spazi aerei veri per gli avvisi in volo; gli esempi no
+
+let MODEL=store.get('ia517_wx_model',{t:0,ids:'',data:{}}), MODEL_BUSY=false, MODEL_ERR='', MODEL_T=null, PASTED=store.get('ia517_metar_paste','');
+function wxFields(){ const s=new Set(), out=[]; for(const f of [...planFields(),HOME,...ROUTE_EXTRA()]) if(f&&!s.has(f.id)){ s.add(f.id); out.push(f); } return out.slice(0,24); }
+function ROUTE_EXTRA(){ return []; }
+function modelSchedule(){ clearTimeout(MODEL_T); MODEL_T=setTimeout(()=>fetchModel(false),1200); }
+async function fetchModel(force){
+  const fs=wxFields(), ids=fs.map(f=>f.id).sort().join(',');
+  const fresh=Date.now()-MODEL.t<20*60000, covered=fs.every(f=>MODEL.data[f.id]);
+  if(!force && fresh && covered) return;
+  if(MODEL_BUSY) return; MODEL_BUSY=true; MODEL_ERR='';
+  const q=a=>a.map(x=>x.toFixed(4)).join(',');
+  const url='https://api.open-meteo.com/v1/forecast?latitude='+q(fs.map(f=>f.lat))+'&longitude='+q(fs.map(f=>f.lon))+
+    '&current=temperature_2m,pressure_msl,wind_speed_10m,wind_direction_10m,wind_gusts_10m,cloud_cover,visibility'+
+    '&hourly=wind_speed_925hPa,wind_direction_925hPa,wind_speed_850hPa,wind_direction_850hPa,cloud_cover_low&forecast_hours=2&wind_speed_unit=kmh&timezone=UTC';
+  try{
+    const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),12000);
+    const r=await fetch(url,{signal:ctl.signal}); clearTimeout(tm);
+    if(!r.ok) throw new Error('errore '+r.status);
+    let j=await r.json(); if(!Array.isArray(j)) j=[j];
+    const data=Object.assign({},MODEL.data);
+    j.forEach((o,i)=>{ const f=fs[i], c=o.current||{}, h=o.hourly||{}; if(!f) return;
+      data[f.id]={lat:f.lat,lon:f.lon,short:f.short,time:c.time,dir:c.wind_direction_10m,kmh:c.wind_speed_10m,gust:c.wind_gusts_10m,
+        qnh:c.pressure_msl!=null?Math.round(c.pressure_msl):null,t:c.temperature_2m,cc:c.cloud_cover,vis:c.visibility,
+        ccLow:h.cloud_cover_low?h.cloud_cover_low[0]:null,
+        w925:h.wind_speed_925hPa?{kmh:h.wind_speed_925hPa[0],dir:h.wind_direction_925hPa[0]}:null,
+        w850:h.wind_speed_850hPa?{kmh:h.wind_speed_850hPa[0],dir:h.wind_direction_850hPa[0]}:null}; });
+    MODEL={t:Date.now(),ids,data}; store.set('ia517_wx_model',MODEL);
+    if(PHONE) try{ parent.IA517.wx(MODEL.data); }catch(e){}
+  }catch(e){ MODEL_ERR=navigator.onLine?'meteo non raggiungibile ('+(e.name==='AbortError'?'tempo scaduto':e.message)+')':'senza internet: dati dell\'ultimo scarico'; }
+  finally{ MODEL_BUSY=false; renderWx(); const f=byId(PLAN.dest), {w}=f?nearestWx(f):{w:null};
+    $('arrival').innerHTML=arrivalHTML(f,(w&&!w.vrb)?{dir:w.dir,kmh:w.kmh}:null,w?w.id:''); }
+}
+// il vento al campo è quello del modello sul punto esatto del campo
+function nearestWx(f){
+  const m=MODEL.data[f.id];
+  if(m && m.kmh!=null) return {w:{id:'previsto sul campo',vrb:false,dir:Math.round(m.dir),kmh:m.kmh,gust:m.gust,qnh:m.qnh},d:0};
+  return {w:null,d:0};
+}
+const d3=v=>String(Math.round(v)).padStart(3,'0');
+function renderWx(){
+  const age=MODEL.t?Math.round((Date.now()-MODEL.t)/60000):null;
+  const fs=wxFields();
+  let html=`<div class="sub">Modello Open-Meteo sul punto di ogni campo${age!=null?` · scaricato ${age<1?'adesso':age+' min fa'}`:''}${MODEL_ERR?` · <span class="warn">${esc(MODEL_ERR)}</span>`:''}. È una previsione, non un'osservazione: vale come orientamento, la manica a vento e la radio decidono.</div>
+    <div class="btnrow"><button class="btn" type="button" id="wxRefresh">${MODEL_BUSY?'Aggiorno…':'Aggiorna meteo'}</button></div>`;
+  html+=fs.map(f=>{ const m=MODEL.data[f.id]; if(!m) return `<div class="metar"><div class="mh"><b>${esc(f.short)}</b></div><div class="sub">non ancora scaricato</div></div>`;
+    return `<div class="metar"><div class="mh"><b>${esc(f.short)} · ${esc(f.name)}</b>${m.qnh?`<button class="btn" type="button" data-q="${m.qnh}">Invia QNH ${m.qnh}</button>`:''}</div>
+      <div class="dec"><span>Vento <b>${d3(m.dir)}° ${Math.round(m.kmh)} km/h${m.gust>m.kmh+9?' raffiche '+Math.round(m.gust):''}</b></span>
+      ${m.w925?`<span>~2500 ft <b>${d3(m.w925.dir)}°/${Math.round(m.w925.kmh)}</b></span>`:''}${m.w850?`<span>~5000 ft <b>${d3(m.w850.dir)}°/${Math.round(m.w850.kmh)}</b></span>`:''}
+      <span>Nubi <b>${m.cc!=null?m.cc+'%':'n.d.'}${m.ccLow!=null?' (basse '+m.ccLow+'%)':''}</b></span>
+      <span>Vis. <b>${m.vis!=null?(m.vis>=10000?'≥10 km':(m.vis/1000).toFixed(1)+' km'):'n.d.'}</b></span>
+      <span>T <b>${m.t!=null?Math.round(m.t)+'°':'n.d.'}</b></span><span>QNH <b>${m.qnh||'n.d.'}</b></span></div></div>`; }).join('');
+  $('metars').innerHTML=html;
+  $('metars').querySelectorAll('button[data-q]').forEach(b=>b.addEventListener('click',()=>sendQnh(+b.dataset.q)));
+  $('wxRefresh').addEventListener('click',()=>fetchModel(true));
+  // METAR ufficiali: nell'app installata si scaricano da soli; dal browser si aprono e si incollano
+  if(LIVE_METAR.list.length) renderLiveMetar(); else {
+  const pm=PASTED.split(/\n+/).map(s=>s.trim()).filter(s=>/^[A-Z]{4}\s+\d{6}Z/.test(s.replace(/^(METAR|SPECI)\s+/,''))).map(parseMetar);
+  $('metarOff').innerHTML=`<div class="sub">I METAR veri si leggono su aviationweather.gov: aprili, copia il testo e incollalo qui per decodificarli e mandare il QNH.</div>
+    <div class="btnrow"><a class="btn" href="https://aviationweather.gov/data/metar/?ids=LIMF,LIMC,LIMW,LILE,LIMZ,LIMA,LILI&hours=0" target="_blank" rel="noopener" style="display:inline-flex;align-items:center;text-decoration:none">Apri i METAR della zona</a></div>
+    <textarea id="metarIn" rows="3" placeholder="Incolla qui i METAR, uno per riga">${esc(PASTED)}</textarea>`+
+    pm.map(w=>`<div class="metar"><div class="mh"><b>${esc(w.id)}</b>${w.qnh?`<button class="btn" type="button" data-q="${w.qnh}">Invia QNH ${w.qnh}</button>`:''}</div><div class="raw">${esc(w.raw)}</div>
+      <div class="dec"><span>Vento <b>${w.vrb?'variabile':d3(w.dir)+'°'} ${Math.round(w.kmh||0)} km/h${w.gust?' raffiche '+Math.round(w.gust):''}</b></span><span>Vis. <b>${w.vis||'n.d.'}</b></span>
+      <span>Nubi <b>${w.cl?w.cl.join(', '):(w.vis==='CAVOK'?'nessuna':'n.d.')}</b></span><span>QNH <b>${w.qnh||'n.d.'}</b></span><span class="sub">${w.time||''}</span></div></div>`).join('');
+  $('metarOff').querySelectorAll('button[data-q]').forEach(b=>b.addEventListener('click',()=>sendQnh(+b.dataset.q)));
+  $('metarIn').addEventListener('change',()=>{ PASTED=$('metarIn').value; store.set('ia517_metar_paste',PASTED); renderWx(); });
+  }
+  const f=byId(PLAN.dest);
+  if(f){ const {w}=nearestWx(f), wind=w?{dir:w.dir,kmh:w.kmh}:null;
+    $('wxDest').innerHTML=`<div class="sub">${esc(f.name)}: ${w?'vento previsto dal modello sul campo':'meteo non ancora scaricato'}.</div>`+arrivalHTML(f,wind,'previsto'); }
+}
+// ---- METAR e TAF veri (aviationweather.gov): l'app nativa li legge senza i limiti del browser ----
+let LIVE_METAR={t:0,list:[],taf:{},err:'',busy:false};
+function metarStations(){
+  const base=['LIMF','LIMA','LIMC','LILE','LIMW','LIMZ','LILI','LIMN'];
+  const near=new Set();
+  for(const f of planFields()){ FIELDS.filter(a=>a.kind==='aero' && /^[A-Z]{4}$/.test(a.id)).map(a=>({a,d:dist(f,a).d})).sort((x,y)=>x.d-y.d).slice(0,3).forEach(o=>near.add(o.a.id)); }
+  return [...new Set([...near,...base])].slice(0,14);
+}
+async function fetchMetar(force){
+  if(!PHONE || !parent.IA517 || !parent.IA517.http) return;
+  if(LIVE_METAR.busy || (!force && Date.now()-LIVE_METAR.t<10*60000 && LIVE_METAR.list.length)) return;
+  LIVE_METAR.busy=true; LIVE_METAR.err='';
+  const ids=metarStations().join(',');
+  try{
+    const r=await parent.IA517.http('https://aviationweather.gov/api/data/metar?ids='+ids+'&format=raw&hours=2');
+    if(r.status!==200) throw new Error('risposta '+r.status);
+    const seen=new Set(), list=[];
+    for(const line of r.text.split(/\n+/)){ const t=line.trim(); if(!t) continue; const w=parseMetar(t); if(!w.id||seen.has(w.id)) continue; seen.add(w.id); list.push(w); }
+    let taf={}; try{ const rt=await parent.IA517.http('https://aviationweather.gov/api/data/taf?ids='+ids+'&format=raw');
+      if(rt.status===200) rt.text.split(/\n(?=TAF |[A-Z]{4} \d{6}Z)/).forEach(b=>{ const m=b.replace(/^TAF\s+(AMD\s+|COR\s+)?/,'').match(/^([A-Z]{4})\s/); if(m && !taf[m[1]]) taf[m[1]]=b.trim(); }); }catch(e){}
+    LIVE_METAR={t:Date.now(),list,taf,err:'',busy:false};
+    store.set('ia517_metar_live',LIVE_METAR);
+  }catch(e){ LIVE_METAR.busy=false; LIVE_METAR.err=(e&&e.message)||'non raggiungibile'; }
+  renderWx();
+}
+function renderLiveMetar(){
+  const age=Math.round((Date.now()-LIVE_METAR.t)/60000), nm=id=>{ const f=byId(id); return f?f.name:''; };
+  $('metarOff').innerHTML=`<div class="sub">Da aviationweather.gov · scaricati ${age<1?'adesso':age+' min fa'}${LIVE_METAR.err?` · <span class="warn">${esc(LIVE_METAR.err)}</span>`:''}. Aeroporti vicini ai campi del piano e della zona.</div>
+    <div class="btnrow"><button class="btn" type="button" id="metarRefresh">${LIVE_METAR.busy?'Aggiorno…':'Aggiorna METAR'}</button></div>`+
+    LIVE_METAR.list.map(w=>`<div class="metar"><div class="mh"><b>${esc(w.id)}${nm(w.id)?' · '+esc(nm(w.id)):''}</b>${w.qnh?`<button class="btn" type="button" data-q="${w.qnh}">Invia QNH ${w.qnh}</button>`:''}</div><div class="raw">${esc(w.raw)}</div>
+      <div class="dec"><span>Vento <b>${w.vrb?'variabile':d3(w.dir)+'°'} ${Math.round(w.kmh||0)} km/h${w.gust?' raffiche '+Math.round(w.gust):''}</b></span><span>Vis. <b>${w.vis||'n.d.'}</b></span>
+      <span>Nubi <b>${w.cl?w.cl.join(', '):(w.vis==='CAVOK'?'nessuna':'n.d.')}</b></span><span>QNH <b>${w.qnh||'n.d.'}</b></span><span class="sub">${w.time||''}</span></div>
+      ${LIVE_METAR.taf[w.id]?`<details><summary>TAF</summary><div class="raw">${esc(LIVE_METAR.taf[w.id])}</div></details>`:''}</div>`).join('');
+  $('metarOff').querySelectorAll('button[data-q]').forEach(b=>b.addEventListener('click',()=>sendQnh(+b.dataset.q)));
+  $('metarRefresh').addEventListener('click',()=>fetchMetar(true));
+}
+(()=>{ const old=store.get('ia517_metar_live',null); if(old && old.list && Date.now()-old.t<3*3600e3) LIVE_METAR=Object.assign(old,{busy:false}); })();
+if(PHONE && parent.IA517 && parent.IA517.native){ setTimeout(()=>fetchMetar(false),1500); setInterval(()=>fetchMetar(false),5*60000); }
+// quando cambia il piano si aggiorna anche il meteo dei campi interessati
+const _updateOrig=update;
+update=function(){ _updateOrig(); modelSchedule(); };
+if(PHONE){
+  document.querySelectorAll('.tab .card').forEach(c=>{ const h=c.querySelector('h2'); if(h && /Collegare il telefono|Aggiornamenti/.test(h.textContent)) c.remove(); });
+  const b=$('nfHere'); if(b) b.textContent='Posizione del telefono';
+}
+setInterval(()=>{ if(Date.now()-MODEL.t>20*60000 && navigator.onLine) fetchModel(false); },60000);
+addEventListener('online',()=>fetchModel(false));
+
+mergeUserFields(); addRwRow();
+renderRoute(); renderStatus(); renderSaved(); renderUser(); update(); showTab(location.hash.slice(1)||'piano'); setLink();
+probe(); setInterval(probe,5000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) probe(); });
+
+</script>
+
+</body></html>

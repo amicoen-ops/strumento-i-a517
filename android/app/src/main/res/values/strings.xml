@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">I-A517 Strumento</string>
+    <string name="title_activity_main">I-A517 Strumento</string>
+    <string name="package_name">it.ia517.strumento</string>
+    <string name="custom_url_scheme">it.ia517.strumento</string>
+</resources>

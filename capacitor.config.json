@@ -1,0 +1,7 @@
+{
+  "appId": "it.ia517.strumento",
+  "appName": "I-A517 Strumento",
+  "webDir": "www",
+  "server": { "androidScheme": "https", "cleartext": true },
+  "android": { "allowMixedContent": true, "captureInput": true, "webContentsDebuggingEnabled": true }
+}

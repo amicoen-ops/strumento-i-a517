@@ -1,0 +1,52 @@
+name: Compila APK
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Dipendenze
+        run: npm ci --no-audit --no-fund
+
+      - name: Pagine dentro l'app
+        run: npx cap sync android
+
+      - name: Compila (firmato con keystore/strumento.keystore)
+        working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon --stacktrace
+
+      - name: Nome del file
+        run: cp android/app/build/outputs/apk/release/app-release.apk I-A517-Strumento-1.0.${{ github.run_number }}.apk
+
+      - name: Pubblica l'APK
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: build-${{ github.run_number }}
+          name: I-A517 Strumento 1.0.${{ github.run_number }}
+          body: Scarica il file .apk dal telefono e installalo (sopra la versione precedente, i dati restano).
+          files: I-A517-Strumento-1.0.${{ github.run_number }}.apk
