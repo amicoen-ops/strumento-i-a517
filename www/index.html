@@ -1268,7 +1268,7 @@ function drawMap(g){
   const bw=R*0.30, bh=R*0.105, ty=CY-R*0.86;
   infoBox(CX-R*0.15,ty,R*0.30,bh,'#fff');
   ctx.fillStyle='#fff'; ctx.font=font(R*0.068,'700'); ctx.textAlign='center'; ctx.textBaseline='middle';
-  ctx.fillText('TRK '+String(Math.round(wrap360(t*R2D))).padStart(3,'0')+'°',CX,ty+bh/2);
+  ctx.fillText((S.trk!=null?'TRK ':'PRUA ')+String(Math.round(wrap360(t*R2D))).padStart(3,'0')+'°',CX,ty+bh/2);
   const sy=CY-R*0.62;
   infoBox(CX-R*0.74,sy,R*0.28,bh,'#4a5260'); infoBox(CX+R*0.46,sy,R*0.28,bh,'#4a5260');
   ctx.font=font(R*0.06,'700'); ctx.fillStyle='#fff';
@@ -1991,7 +1991,7 @@ OBST.length=0;                                           // ostacoli sintetici: 
 // ---- app installata (APK Capacitor): funzioni native al posto di quelle del browser ----
 PH.native=(()=>{ const C=window.Capacitor; if(!C||!C.isNativePlatform||!C.isNativePlatform()) return null;
   const P=n=>{ try{ return (C.Plugins&&C.Plugins[n])||C.registerPlugin(n); }catch(e){ return null; } };
-  return {tts:P('TextToSpeech'),awake:P('KeepAwake'),fs:P('Filesystem'),share:P('Share'),http:P('CapacitorHttp'),glo:P('GloSerial')}; })();
+  return {tts:P('TextToSpeech'),awake:P('KeepAwake'),fs:P('Filesystem'),share:P('Share'),http:P('CapacitorHttp'),glo:P('GloSerial'),compass:P('Compass')}; })();
 // ---- voce e vibrazione ----
 PH.say=function(text,urgent){
   if(!PH.voice || (!window.speechSynthesis && !(PH.native&&PH.native.tts))) return;
@@ -2031,8 +2031,11 @@ PH.onOrient=function(e){
   const abs=e.type==='deviceorientationabsolute'||e.absolute===true;
   if(!abs) return; if(e.type==='deviceorientationabsolute') PH.mag.abs=true; else if(PH.mag.abs) return;
   const al=e.alpha, be=e.beta, ga=e.gamma; if(al==null||be==null||ga==null) return;
+  if(PH.mag.native) return;                                                // c'è il modulo nativo: vale quello
   const ca=Math.cos(al*D2R), sa=Math.sin(al*D2R), cb=Math.cos(be*D2R), sb=Math.sin(be*D2R), cg=Math.cos(ga*D2R), sg=Math.sin(ga*D2R);
-  const Rm=[[ca*cg-sa*sb*sg,-sa*cb,ca*sg+sa*sb*cg],[sa*cg+ca*sb*sg,ca*cb,sa*sg-ca*sb*cg],[-cb*sg,sb,cb*cg]];   // telefono -> Terra (Est, Nord, Su)
+  PH.magFromR([[ca*cg-sa*sb*sg,-sa*cb,ca*sg+sa*sb*cg],[sa*cg+ca*sb*sg,ca*cb,sa*sg-ca*sb*cg],[-cb*sg,sb,cb*cg]],'browser');   // telefono -> Terra (Est, Nord, Su)
+};
+PH.magFromR=function(Rm,src){
   const scr=PH.scrAng()*D2R, c=Math.cos(scr), sn=Math.sin(scr);
   const toDev=v=>[v[0]*c+v[1]*sn, -v[0]*sn+v[1]*c, v[2]];                 // assi dello schermo -> assi del telefono
   const toE=v=>[Rm[0][0]*v[0]+Rm[0][1]*v[1]+Rm[0][2]*v[2], Rm[1][0]*v[0]+Rm[1][1]*v[1]+Rm[1][2]*v[2], Rm[2][0]*v[0]+Rm[2][1]*v[1]+Rm[2][2]*v[2]];
@@ -2041,7 +2044,7 @@ PH.onOrient=function(e){
   if(Math.hypot(w[0],w[1])<0.2) return;
   const h=wrap360(Math.atan2(w[0],w[1])*R2D+(+PH.decl||0));                // magnetico -> vero con la declinazione
   PH.mag.raw=PH.mag.hdg==null?h:wrap360(PH.mag.raw+angDiff(h,PH.mag.raw)*0.25);
-  PH.mag.hdg=PH.mag.raw; PH.mag.t=performance.now();
+  PH.mag.hdg=PH.mag.raw; PH.mag.t=performance.now(); PH.mag.src=src;
 };
 PH.magInUse=function(){ return PH.mag.hdg!=null && performance.now()-PH.mag.t<1500 && !PH.demo &&
   (PH.compassMode==='always' || (PH.compassMode==='ground' && !(S.gpsReal && S.gs>25))); };
@@ -2086,7 +2089,8 @@ PH.onMotion=function(e){
   const phi=ro*D2R, th=pi*D2R, psiDot=(wb[1]*Math.sin(phi)+wb[2]*Math.cos(phi))/Math.max(0.2,Math.cos(th));
   if(PH.hdg==null) PH.hdg=S.hdg;
   PH.hdg=wrap360(PH.hdg+psiDot*R2D*dt);
-  if(PH.magInUse()) PH.hdg=wrap360(PH.hdg+angDiff(PH.mag.hdg,PH.hdg)*Math.min(1,dt/0.8));   // a terra o lento: la bussola tiene la prua
+  if(PH.magInUse()){ const dm=angDiff(PH.mag.hdg,PH.hdg);                 // a terra o lento: la bussola tiene la prua
+    PH.hdg=Math.abs(dm)>25?PH.mag.hdg:wrap360(PH.hdg+dm*Math.min(1,dt/0.5)); }
   S.hdg=PH.hdg;
   // vario: accelerazione verticale dalla terna terrestre
   const [dx,dy,dz]=PH.ahrs.down(), aUp=(-(dx*fb[0]+dy*fb[1]+dz*fb[2])-1)*9.80665;
@@ -2125,6 +2129,7 @@ PH.applyFix=function(fx){
   if(PH.gsPrev!=null) PH.dvdt+=(clamp((gs-PH.gsPrev)/dtF,-4,4)-PH.dvdt)*Math.min(1,dtF/2); PH.gsPrev=gs;
   S.gs=gs*3.6; S.ias=S.gs; PH.lastFix.gs=S.gs;
   if(gs>1.5 && trk!=null && trk===trk) S.trk=trk;
+  else if(gs<1.2) S.trk=null;                    // fermo: la traccia GPS è solo rumore, conta la prua
   // prua: riallineata alla traccia (corretta con il vento stimato) quando si va abbastanza veloci
   if(S.gs>25 && S.trk!=null){
     let tgt=S.trk;
@@ -2427,7 +2432,7 @@ PH.status=function(){
       PH.glo.port?(PH.glo.fix?`${PH.glo.fix.sats??'?'} sat · HDOP ${PH.glo.fix.hdop??'?'} · ${PH.glo.hz} Hz`:'collegato, nessun fix'):(PH.glo.want?'in attesa di ricollegarsi':(PH.glo.err||'non collegato'))],
     ['ok','Posizione in uso',PH.demo?'simulata':(PH.src==='glo'?'Garmin GLO 2':(PH.src==='phone'?'GPS del telefono':'nessuna'))+' · scelta '+{auto:'automatica',phone:'solo telefono',glo:'solo GLO 2'}[PH.srcPref]],
     [PH.motionHz>20?'ok':'bad','Sensori di movimento',PH.motionHz?PH.motionHz+' Hz':'nessun dato'],
-    [PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?'ok':'warn','Bussola',PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?`${String(Math.round(PH.mag.hdg)).padStart(3,'0')}° vera · ${PH.magInUse()?'in uso':(PH.compassMode==='never'?'spenta':'in volo usa la traccia GPS')}`:'nessun dato'],
+    [PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?'ok':'warn','Bussola',PH.mag.hdg!=null&&performance.now()-PH.mag.t<2000?`${String(Math.round(PH.mag.hdg)).padStart(3,'0')}° vera · ${PH.magInUse()?'in uso':(PH.compassMode==='never'?'spenta':'in volo usa la traccia GPS')}${PH.mag.acc!=null&&PH.mag.acc<2?' · da calibrare (muovi a otto)':''}`:(PH.mag.err?'non disponibile: '+PH.mag.err:'nessun dato')],
     [PH.mountCal?'ok':'warn','Montaggio',PH.mountCal?('livellato'+(PH.groundPitch?` · a terra ${PH.groundPitch}°`:'')):'telefono verticale (predefinito)'],
     [PH.altCal?'ok':'warn','Quota GPS',PH.altCal?`tarata a ${PH.altCal.field}`:'geoide '+PH.geoid+' m, non tarata'],
     [PH.dem.size?'ok':'warn','Terreno (DEM)',PH.dem.size?`${PH.dem.size} riquadri in memoria`:'non ancora scaricato'],
@@ -2509,7 +2514,8 @@ PH.drawSplit=function(g){
 PH.info=function(g){
   const card=(id,v,s)=>{ const e=el(id); if(e){ e.querySelector('b').textContent=v; e.querySelector('small').textContent=s||''; } };
   card('phGs',S.gpsReal||PH.demo?Math.round(S.gs!=null?S.gs:S.ias):'---',PH.tas&&PH.flight?`TAS stim. ${Math.round(PH.tas*3.6)}`:'km/h suolo');
-  card('phTrk',S.trk!=null?String(Math.round(S.trk)).padStart(3,'0')+'°':'---','traccia');
+  card('phTrk',S.trk!=null?String(Math.round(S.trk)).padStart(3,'0')+'°':String(Math.round(wrap360(S.hdg))).padStart(3,'0')+'°',S.trk!=null?'traccia':(PH.magInUse()?'prua bussola':'prua'));
+  { const h=el('phTrk'); if(h) h.querySelector('span').textContent=S.trk!=null?'TRK':'PRUA'; }
   card('phAlt',Math.round(S.alt)+' ft',PH.acc!=null&&!PH.demo?(PH.src==='glo'?`GLO 2 · ${S.sats??'?'} sat`:`GPS ±${Math.round(PH.acc)} m`)+(PH.altOfsBy[PH.src]?' · tarata':''):'');
   card('phVs',(S.vs>=0?'+':'')+S.vs.toFixed(1),'m/s');
   card('phWind',WIND.valid?fmtWind().replace(' PREV',''):'---',WIND.valid?(WIND.src==='prev'?'previsto':'stimato in volo'):'vira per stimarlo');
@@ -2977,6 +2983,11 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   addEventListener('orientationchange',PH.onRotate); addEventListener('resize',PH.onRotate);
   addEventListener('devicemotion',PH.onMotion);
   addEventListener('deviceorientationabsolute',PH.onOrient); addEventListener('deviceorientation',PH.onOrient);
+  if(PH.native && PH.native.compass){ try{
+    PH.native.compass.addListener('rot',d=>{ const R=d&&d.R; if(!R||R.length<9) return; PH.mag.native=true; PH.mag.acc=d.acc;
+      PH.magFromR([[R[0],R[1],R[2]],[R[3],R[4],R[5]],[R[6],R[7],R[8]]],'android'); });
+    PH.native.compass.start().catch(e=>{ PH.mag.err=String(e&&e.message||e); });
+  }catch(e){} }
   if(navigator.geolocation) navigator.geolocation.watchPosition(PH.onPos,PH.onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   else PH.gpsErr='GPS non disponibile';
   PH.wakeLock(); document.addEventListener('visibilitychange',()=>{ PH.perf.lastRaf=0; if(!document.hidden) PH.wakeLock(); });
@@ -3006,6 +3017,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.13','Bussola letta direttamente dal sensore di Android (prima dipendeva dal browser interno e poteva mancare). Da fermo mappa e riquadro usano la prua della bussola (scritta PRUA) invece della traccia GPS, che a velocità zero è solo rumore.'],
   ['1.0.12','Bussola del telefono: a terra e sotto 25 km/h la prua viene dalla bussola (con la declinazione, prua vera); in volo dalla traccia GPS. Scelta in Impostazioni › Bussola. Quota: si può tarare a mano con una quota nota («Tara qui»).'],
   ['1.0.11','Ricerca dei campi scrivendo il nome o la sigla, in DIRECT TO e in NUOVA ROTTA. Invito alla donazione nei primi 5 avvii (non nella versione del Play Store). Informativa sulla privacy in Info.'],
   ['1.0.10','Assetto giusto anche con il telefono girato in orizzontale (da tutte e due le parti) o capovolto: i sensori seguono il verso dello schermo, e quando giri il telefono l\'orizzonte si rilivella da solo.'],
