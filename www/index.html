@@ -2021,6 +2021,11 @@ PH.level=function(groundPitchDeg){
   toast('ASSETTO LIVELLATO'+(PH.groundPitch?` · A TERRA ${PH.groundPitch}°`:''));
   return true;
 };
+// verso dello schermo: 0 verticale, 90 o 270 orizzontale
+PH.scrAng=function(){ if(PH.angTest!=null) return PH.angTest;
+  const o=screen.orientation; const v=o&&typeof o.angle==='number'?o.angle:(typeof window.orientation==='number'?window.orientation:0); return ((v%360)+360)%360; };
+PH.onRotate=function(){ const ang=PH.scrAng(); if(ang===PH.lastAng) return; PH.lastAng=ang;
+  PH.ahrsInit=false; PH.attF=null; PH.aAvg=[0,0,0]; PH.act('schermo '+ang+'°'); };
 PH.smoothTxt=function(){ const v=PH.smooth; return v<=0?'immediato':(v/10).toFixed(1).replace('.',',')+' s'; };
 PH.resetMount=function(){ PH.M=[[0,0,-1],[1,0,0],[0,-1,0]]; PH.mountCal=false; try{ localStorage.removeItem('ia517p_mount'); }catch(e){} PH.ahrsInit=false; toast('MONTAGGIO: TELEFONO VERTICALE'); };
 
@@ -2030,12 +2035,15 @@ PH.onMotion=function(e){
   if(!a || a.x==null) return;
   const now=performance.now();
   PH.mCount++; if(now-PH.mT0>2000){ PH.motionHz=Math.round(PH.mCount*1000/(now-PH.mT0)); PH.mCount=0; PH.mT0=now; }
-  const av=[a.x||0,a.y||0,a.z||0];
+  // i sensori arrivano sempre negli assi del telefono in verticale: li porto negli assi dello schermo,
+  // così l'assetto è giusto anche col telefono girato in orizzontale (da una parte o dall'altra)
+  const scr=PH.scrAng()*D2R, c=Math.cos(scr), sn=Math.sin(scr), ax=a.x||0, ay=a.y||0;
+  const av=[ax*c-ay*sn, ax*sn+ay*c, a.z||0];
   for(let i=0;i<3;i++) PH.aAvg[i]+= (av[i]-PH.aAvg[i])*0.05;
   if(PH.demo) return;
   let dt=(e.interval>0?(e.interval>1?e.interval/1000:e.interval):0.016); dt=clamp(dt,0.004,0.06);
   const fb=PH.toBody(av).map(x=>x/9.80665);               // forza specifica nel corpo, in g (fermo e livellato: 0,0,-1)
-  const wd=r?[(r.beta||0)*D2R,(r.gamma||0)*D2R,(r.alpha||0)*D2R]:[0,0,0];
+  const rx=r?(r.beta||0)*D2R:0, ry=r?(r.gamma||0)*D2R:0, wd=[rx*c-ry*sn, rx*sn+ry*c, r?(r.alpha||0)*D2R:0];
   const wb=PH.toBody(wd);
   if(!PH.ahrsInit){ PH.ahrs.levelFrom(fb[0],fb[1],fb[2]); PH.ahrsInit=true; PH.attF=null; PH.hdg=S.trk!=null?S.trk:S.hdg; }
   // compensazione di virata e accelerazione con la velocità GPS (come la scheda sensori con il Pitot)
@@ -2906,6 +2914,9 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   // sensori
   if(PH.glo.want) PH.gloConnect(false);
   setInterval(()=>{ if(PH.glo.want && !PH.glo.port) PH.gloConnect(false); },5000);
+  PH.lastAng=PH.scrAng();
+  try{ screen.orientation&&screen.orientation.addEventListener('change',PH.onRotate); }catch(e){}
+  addEventListener('orientationchange',PH.onRotate); addEventListener('resize',PH.onRotate);
   addEventListener('devicemotion',PH.onMotion);
   if(navigator.geolocation) navigator.geolocation.watchPosition(PH.onPos,PH.onPosErr,{enableHighAccuracy:true,maximumAge:0,timeout:15000});
   else PH.gpsErr='GPS non disponibile';
@@ -2936,6 +2947,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.10','Assetto giusto anche con il telefono girato in orizzontale (da tutte e due le parti) o capovolto: i sensori seguono il verso dello schermo, e quando giri il telefono l\'orizzonte si rilivella da solo.'],
   ['1.0.9','Corretto il blocco vero: con il GPS irregolare (al chiuso) il filtro della quota diventava instabile e la quota arrivava a miliardi di metri, bloccando la scala della quota. Nuovo filtro stabile e protezioni nel disegno. Nuova scheda SIMULA: vola da sola una rotta salvata o un direct to, con velocità, quota, vento e tempo accelerato fino a ×8. Campi di tutto il Nord Italia da OurAirports: 342 tra aeroporti e aviosuperfici.'],
   ['1.0.8','Scatola nera: l\'app ricorda ultimo stato e ultime azioni; dopo un blocco, alla riapertura, li alleghi alla segnalazione da Info.'],
   ['1.0.7','Zoom della mappa fino a 700 km (tutto il Nord Italia): 19 scale da 1 a 700 km. Oltre 60 km i campi diventano puntini e restano scritti solo gli aeroporti; il terreno usa tessere più leggere e si scarica anche per il volo senza internet.'],
