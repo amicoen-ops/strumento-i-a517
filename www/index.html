@@ -120,8 +120,8 @@
   .ph-card b{font:700 19px "Oxanium",system-ui,sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-variant-numeric:tabular-nums}
   .ph-card small{font-size:11px;color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .ph-card.warn b{color:var(--accent)}
-  .ph-nav{display:grid;grid-template-columns:1fr 1fr 1.45fr 0.9fr;gap:6px}
-  .ph-nav button{min-height:46px;padding:0 2px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:700 13px "Oxanium",system-ui,sans-serif;letter-spacing:.08em}
+  .ph-nav{display:grid;grid-template-columns:0.85fr 0.9fr 1.45fr 1fr 0.8fr;gap:5px}
+  .ph-nav button{min-height:46px;padding:0 2px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:var(--dim);font:700 12px "Oxanium",system-ui,sans-serif;letter-spacing:.03em}
   .ph-nav button[aria-current="page"]{color:var(--cyan);border-color:var(--cyan)}
   .ph-alert{position:absolute;left:50%;top:15%;transform:translateX(-50%);max-width:86%;padding:8px 14px;border-radius:10px;
     font:700 clamp(13px,3.4vw,20px) "Oxanium",system-ui,sans-serif;letter-spacing:.06em;text-align:center;z-index:5;pointer-events:none}
@@ -175,6 +175,8 @@
   .ph-zoom button:active{background:rgba(255,255,255,.22)}
   .ph-range{display:flex;flex-direction:column;gap:6px;width:100%}
   .ph-range input{width:100%;accent-color:#ff4fd8}
+  .ph-stat{cursor:default}
+  .ph-imp select{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:inherit;font:inherit;padding:0 8px}
 </style>
 
 <h1>Orizzonte Sintetico</h1>
@@ -228,6 +230,7 @@
     <button type="button" data-v="volo" aria-current="page">VOLO</button>
     <button type="button" data-v="piano">PIANO</button>
     <button type="button" data-v="imp">IMPOSTAZIONI</button>
+    <button type="button" data-v="sim">SIMULA</button>
     <button type="button" data-v="info">INFO</button>
   </nav>
 </aside>
@@ -238,6 +241,10 @@
 <div class="ph-sheet" id="phInfo" hidden>
   <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Info, aggiornamenti e segnalazioni</b></div>
   <div class="ph-imp" id="phInfoBody"></div>
+</div>
+<div class="ph-sheet" id="phSim" hidden>
+  <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Simula una rotta</b></div>
+  <div class="ph-imp" id="phSimBody"></div>
 </div>
 <div class="ph-sheet" id="phImp" hidden>
   <div class="ph-sheet-h"><button type="button" data-close>◀ Strumento</button><b>Impostazioni</b></div>
@@ -347,7 +354,7 @@ function terrainSynth(E,N){
 // (ident, sigla, nome, lat, lon, quota ft, piste [le, he, rotta vera, lunghezza m, asfalto], tipo: aero/ulm/alti=altiporto/glac=ghiacciaio)
 // quote confermate dal pilota (altimetro a terra con QNH): hanno la precedenza sulle fonti
 const ELEV_CONFIRMED={'IT-0074':740};
-const FIELDS_RAW=[["IT-0074","CAROLINA","Carolina",45.25315,7.89898,708,[["18","36",183,600,0]],"ulm"],["IT-0001","IL FALCO","Il Falco",45.26925,7.95073,768,[["07","25",73,650,0],["18","36",183,349,0]],"ulm"],["IT-0775","VEROLENGO","Verolengo",45.18612,7.98596,null,[],"ulm"],["LIVV","LIVV","Moncucco-Vische",45.34461,7.91907,781,[["18","36",180.0,631,0]],"aero"],["IT-0193","LUCCHINA","Lucchina Fly Club",45.32148,8.00024,951,[],"ulm"],["IT-0076","CANAVESE","Canavese ULM Club",45.35873,7.71929,853,[["13","31",133,369,0]],"ulm"],["IT-0055","PEGASUS","Pegasus 2000",45.31167,7.66515,1312,[["18","36",183,450,0]],"ulm"],["LIMF","LIMF","Torino Caselle",45.2008,7.64963,989,[["18","36",183.0,3300,1]],"aero"],["IT-0168","CAB CLUB","Cab Club",45.05783,8.06682,764,[],"ulm"],["IT-0048","CASTELNUOVO","Castelnuovo Don Bosco",45.02444,7.96639,730,[["15","33",150.0,749,0]],"ulm"],["IT-0035","IVREA","Ivrea Montalto Dora",45.48755,7.84323,810,[["14","32",143.0,798,0]],"ulm"],["IT-0202","VENARIA","Venaria Reale",45.13013,7.61201,null,[],"ulm"],["LIMA","LIMA","Torino Aeritalia",45.08444,7.60306,943,[["10L","28R",101.0,1074,1],["10R","28L",101.5,750,0]],"aero"],["LILE","LILE","Biella-Cerrione",45.4953,8.10278,920,[["16","34",156.0,1320,1]],"aero"],["IT-0069","CARISIO","Carisio",45.44662,8.1915,150,[],"ulm"],["IT-0058","MUSINÈ","Prealpi-Musinè",45.1245,7.52144,1106,[["03","21",33,600,0]],"ulm"],["IT-0426","RIVOLI","Rivoli Tetti Neirotti",45.04682,7.53646,1000,[],"ulm"],["IT-0677","OZZANO","Ozzano",45.12039,8.35202,null,[],"ulm"],["IT-0075","CERRETO","Cerreto Castello",45.54806,8.16111,1000,[],"ulm"],["IT-0050","COSSATO","Cossato",45.53191,8.20114,804,[],"ulm"],["IT-0072","TRIVERSA","Val Triversa",44.90689,8.0341,574,[],"ulm"],["LILI","LILI","Vercelli",45.31111,8.4175,417,[["09","27",83.0,559,0]],"aero"],["IT-0269","ROVASENDA","Rovasenda 2000",45.54435,8.27891,787,[["12","30",123,500,0]],"ulm"],["LILM","LILM","Casale Monferrato",45.11004,8.4569,377,[["18","36",178.0,879,0]],"aero"],["IT-0191","ELIKA","L'Elika",44.88293,7.56105,null,[],"ulm"],["IT-0073","VALSUSA","Valsusa",45.1125,7.28722,1250,[["09","27",93,349,0]],"ulm"],["IT-0051","CUMIANA","Cumiana",44.93904,7.42892,984,[["14","32",143,449,0]],"ulm"],["IT-0053","GATTINARA","Gattinara",45.60434,8.32446,922,[],"ulm"],["IT-0159","ONDALBA","Ondalba",44.77612,7.87933,1017,[],"ulm"],["IT-0042","ASTIGIANA","Astigiana",44.88881,8.35487,469,[],"ulm"],["IT-0041","ANGIALE","Angiale",44.83361,7.53056,843,[],"ulm"],["IT-0065","LAGHETTO","Il Laghetto",44.77788,8.13034,450,[["05","23",53,450,0]],"ulm"],["IT-0039","MEGGIANA","Meggiana",45.74609,8.0407,5344,[],"alti"],["IT-0045","COLOMBARE","Cascina Colombare",45.49611,8.52527,558,[["09","27",93,800,0]],"ulm"],["IT-0425","AEROTEAM","Aeroteam",45.43624,8.57737,null,[],"ulm"],["IT-0427","BOZZO","Andrea Bozzo",44.86374,7.40707,984,[],"ulm"],["IT-0071","SANT'ELIA","Sant'Elia",44.74196,7.70987,null,[["17","35",173,650,0]],"ulm"],["IT-0043","BOGLIETTO","Boglietto",44.75861,8.18306,610,[["10","28",103,749,0]],"ulm"],["IT-0228","CERUTTI","Gianni Cerutti",45.34921,8.64632,393,[["17","35",173,399,0]],"ulm"],["IT-0511","CERIELLA","La Ceriella",45.22014,8.65954,null,[],"ulm"],["IT-0434","AIRONE","L'Airone",45.15273,8.65522,338,[],"ulm"],["IT-0218","VOLOPURO","Volopuro",45.56409,8.54184,null,[],"ulm"],["IT-0037","MERLO","Merlo Romano",44.83443,7.36357,1000,[["10","28",103,449,0]],"ulm"],["IT-0068","CHATELAIR","Chatelair",45.74,7.48056,1500,[],"ulm"],["IT-0767","S. MICHELE","San Michele NO11",45.66137,8.48094,912,[],"ulm"],["IT-0040","M. INGEGNO","Marc Ingegno",45.77806,8.26861,1411,[],"ulm"],["IT-0192","LE STREGHE","Le Streghe",45.39452,8.70693,410,[["16","34",163,339,0]],"ulm"],["IT-0549","VERBANO","Verbano Fly",45.67637,8.48646,null,[],"ulm"],["LILA","LILA","Alessandria",44.92563,8.62673,299,[["03","21",33,640,0]],"aero"],["LIMN","LIMN","Cameri (militare)",45.5296,8.66922,586,[["17","35",168.0,2992,1]],"aero"],["IT-0067","CHAMOIS","Chamois",45.8335,7.61765,5600,[],"alti"],["LIMW","LIMW","Aosta",45.73855,7.3683,1791,[["09","27",85.0,1246,1]],"aero"],["IT-0472","LEONARDO DA V","Leonardo da Vinci",45.28833,8.8,358,[["06L","24R",63,649,0]],"ulm"],["IT-0790","GRANTA PAREÌ","Granta Pareì ghiacciaio",45.49264,7.06053,null,[],"glac"],["IT-0789","COL DI RHÉMES","Col di Rhémes",45.49614,7.05721,null,[],"glac"],["IT-0791","SASSIERE","Gh. de la Sassiere",45.49695,7.03797,null,[],"glac"],["IT-0047","CASCINA VALEN","Cascina Valentino",44.69544,7.40242,280,[],"ulm"],["IT-0196","NATALE/BATTIS","Natale/Battistoni",45.33496,8.82417,357,[["14","32",143,470,0]],"ulm"],["IT-0785","LYS","Ghiacciaio del Lys",45.91712,7.85535,null,[],"glac"],["IT-0800","SANT'ANNA DI","Sant'Anna di Saluzzo",44.65943,7.45636,981,[],"ulm"],["IT-0054","IL PICCHIO","Il Picchio",45.70873,8.59571,699,[],"ulm"],["IT-0801","ALI SUL PO","Ali sul Po",44.65734,7.44981,991,[],"ulm"],["IT-0057","PIOVERA","Piovera",44.93583,8.74933,312,[],"ulm"],["IT-0118","MEZZANA BIGLI","Mezzana Bigli",45.06541,8.83518,null,[["03","21",33,800,0]],"ulm"],["LIMC","LIMC","Milano Malpensa",45.6306,8.72811,768,[["17L","35R",170.0,3920,1],["17R","35L",170.0,3920,1]],"aero"],["IT-0784","NEVAIO DEL FA","Nevaio del Fallére",45.75881,7.18948,null,[],"glac"],["IT-0038","ACQUI TERME","Acqui Terme",44.67749,8.50124,430,[],"ulm"],["FR-0293","LA TOVIÈRE","La Tovière",45.46567,6.93239,7349,[],"alti"],["IT-0977","CÀ DEL PIERPA","Cà del Pierpa",44.89918,8.7827,299,[],"ulm"],["IT-0504","MANTOVANA","Mantovana",44.72663,8.59373,738,[],"ulm"],["IT-0111","NAVIGLI","Navigli",45.41441,8.89507,374,[],"ulm"],["IT-0064","PLOIA","Ploia",44.88417,8.78083,420,[],"ulm"],["LILG","LILG","Vergiate",45.71263,8.70071,863,[["16","34",163,800,0]],"aero"],["LIMZ","LIMZ","Cuneo Levaldigi",44.54746,7.62305,1267,[["03","21",32.0,2104,1]],"aero"],["FR-0273","GRANDE MOTTE","Glacier de la Grande Motte",45.425,6.89444,9564,[],"glac"],["IT-0780","RUTOR GLACIER","Rutor Glacier",45.63222,7.00542,10830,[],"glac"],["IT-0786","CHAMPILLON","Champillon",45.85064,7.27391,null,[],"alti"],["IT-0783","BRAOULÉ","Ghiacciaio del Braoulé",45.95113,7.52853,null,[],"glac"],["FR-0313","COL DU PALET","Col du Palet",45.45045,6.8826,8005,[],"glac"],["IT-0782","MONT GELÉ","Gh. del Mont Gelé",45.90268,7.36571,null,[],"glac"],["IT-0063","COUNTRY FLY","Country Fly",44.50306,7.82167,1350,[["18","36",183,420,0]],"ulm"],["IT-0059","CITTÀ DI TORT","Città di Tortona",44.93844,8.86588,315,[],"ulm"],["IT-0138","AIR FOLIES","Air Folies",45.53297,8.90103,558,[["16","34",163,289,0]],"ulm"],["IT-0756","PIAN MUNE'","Pian Mune'",44.6458,7.24493,4905,[["04","22",43,99,0]],"alti"],["IT-0044","BELTRUTTA","Beltrutta",44.49651,7.72297,1174,[],"ulm"],["IT-0710","CASCINA ROSIO","Cascina Rosio",45.41609,8.96513,384,[["16","34",16.0,509,0]],"ulm"],["LFKD","LFKD","Sollières Sardières",45.2538,6.80114,4255,[],"alti"],["LIMR","LIMR","Novi Ligure Eugenio Mossi",44.78,8.78639,607,[["18","36",183,925,0]],"aero"],["IT-0052","FRANCAVILLA B","Francavilla Bisio",44.72987,8.73007,525,[],"ulm"],["IT-0341","OASI","Oasi",45.69656,8.82695,980,[["18","36",183,390,0]],"ulm"],["VB02","MEGOLO","Megolo",45.99625,8.30313,709,[["12L","30R",123,359,0]],"ulm"],["IT-0379","ROSANGELES","Rosangeles",45.36298,9.01706,360,[["16","34",163,600,0]],"ulm"],["IT-0112","VOLO CLUB MIL","Volo Club Milano",45.44944,8.99833,335,[],"ulm"],["IT-0273","GIULIANO BORG","Giuliano Borgonovi",45.1871,9.04282,203,[],"ulm"],["LILC","LILC","Calcinate del Pesce",45.8097,8.76806,797,[],"aero"],["FR-0272","CHIAUPE","Altisurface du Glacier de la Chiaupe",45.49167,6.775,10170,[],"glac"],["IT-0062","BOSIO GUIDO","Bosio Guido",44.43421,7.63215,1500,[["06","21",63,480,0]],"ulm"],["IT-0034","GIANCARLO FIL","Giancarlo Filippi",44.41437,7.81128,1411,[],"ulm"],["LILH","LILH","Voghera-Rivanazzano",44.952,9.01653,423,[["16","34",159.6,1000,1]],"aero"],["LILN","LILN","Varese-Venegono",45.7422,8.88823,1100,[["17","35",176.0,1420,1]],"aero"],["IT-0554","ALTA LANGA","Alta Langa",44.41115,8.12085,627,[["16","34",163,385,0]],"ulm"],["IT-0056","ALPI MARITTIM","Alpi Marittime",44.39111,7.72556,1457,[["06","24",63,480,0]],"ulm"],["IT-0208","MACCAGNO","Maccagno",44.4236,7.45913,null,[],"ulm"],["IT-0792","MIRAVIDI BREU","Gh. del Miravidi breul",45.71196,6.82283,null,[],"glac"],["LSYR","ROSA BLANCHE","Rosa Blanche Mountain Landing Site",46.06083,7.35472,null,[],"glac"],["CH-0003","PRASFLEURI","Altisurface du Glacier de Prasfleuri",46.06429,7.35432,null,[],"glac"],["IT-0793","LÉCHAUD","Gh. del Léchaud",45.73186,6.81623,null,[],"glac"],["IT-0049","CHAVEZ-MARINI","Chavez-Marini",46.13417,8.30633,922,[["01","19",13,779,0],["18","36",178.0,600,1]],"ulm"]];
+const FIELDS_RAW=[["IT-0074","CAROLINA","Carolina",45.25315,7.89898,708,[["18","36",183,600,0]],"ulm"],["IT-0001","IL FALCO","Il Falco",45.26925,7.95073,768,[["07","25",73,650,0],["18","36",183,349,0]],"ulm"],["IT-0775","VEROLENGO","Verolengo",45.18612,7.98596,null,[],"ulm"],["LIVV","LIVV","Moncucco-Vische",45.34461,7.91907,781,[["18","36",180.0,631,0]],"aero"],["IT-0193","LUCCHINA","Lucchina Fly Club",45.32148,8.00024,951,[],"ulm"],["IT-0076","CANAVESE","Canavese ULM Club",45.35873,7.71929,853,[["13","31",133,369,0]],"ulm"],["IT-0055","PEGASUS","Pegasus 2000",45.31167,7.66515,1312,[["18","36",183,450,0]],"ulm"],["LIMF","LIMF","Torino Caselle",45.2008,7.64963,989,[["18","36",183.0,3300,1]],"aero"],["IT-0168","CAB CLUB","Cab Club",45.05783,8.06682,764,[],"ulm"],["IT-0048","CASTELNUOVO","Castelnuovo Don Bosco",45.02444,7.96639,730,[["15","33",150.0,749,0]],"ulm"],["IT-0035","IVREA","Ivrea Montalto Dora",45.48755,7.84323,810,[["14","32",143.0,798,0]],"ulm"],["IT-0202","VENARIA","Venaria Reale",45.13013,7.61201,null,[],"ulm"],["LIMA","LIMA","Torino Aeritalia",45.08444,7.60306,943,[["10L","28R",101.0,1074,1],["10R","28L",101.5,750,0]],"aero"],["LILE","LILE","Biella-Cerrione",45.4953,8.10278,920,[["16","34",156.0,1320,1]],"aero"],["IT-0069","CARISIO","Carisio",45.44662,8.1915,150,[],"ulm"],["IT-0058","MUSINÈ","Prealpi-Musinè",45.1245,7.52144,1106,[["03","21",33,600,0]],"ulm"],["IT-0426","RIVOLI","Rivoli Tetti Neirotti",45.04682,7.53646,1000,[],"ulm"],["IT-0677","OZZANO","Ozzano",45.12039,8.35202,null,[],"ulm"],["IT-0075","CERRETO","Cerreto Castello",45.54806,8.16111,1000,[],"ulm"],["IT-0050","COSSATO","Cossato",45.53191,8.20114,804,[],"ulm"],["IT-0072","TRIVERSA","Val Triversa",44.90689,8.0341,574,[],"ulm"],["LILI","LILI","Vercelli",45.31111,8.4175,417,[["09","27",83.0,559,0]],"aero"],["IT-0269","ROVASENDA","Rovasenda 2000",45.54435,8.27891,787,[["12","30",123,500,0]],"ulm"],["LILM","LILM","Casale Monferrato",45.11004,8.4569,377,[["18","36",178.0,879,0]],"aero"],["IT-0191","ELIKA","L'Elika",44.88293,7.56105,null,[],"ulm"],["IT-0073","VALSUSA","Valsusa",45.1125,7.28722,1250,[["09","27",93,349,0]],"ulm"],["IT-0051","CUMIANA","Cumiana",44.93904,7.42892,984,[["14","32",143,449,0]],"ulm"],["IT-0053","GATTINARA","Gattinara",45.60434,8.32446,922,[],"ulm"],["IT-0159","ONDALBA","Ondalba",44.77612,7.87933,1017,[],"ulm"],["IT-0042","ASTIGIANA","Astigiana",44.88881,8.35487,469,[],"ulm"],["IT-0041","ANGIALE","Angiale",44.83361,7.53056,843,[],"ulm"],["IT-0065","LAGHETTO","Il Laghetto",44.77788,8.13034,450,[["05","23",53,450,0]],"ulm"],["IT-0039","MEGGIANA","Meggiana",45.74609,8.0407,5344,[],"alti"],["IT-0045","COLOMBARE","Cascina Colombare",45.49611,8.52527,558,[["09","27",93,800,0]],"ulm"],["IT-0425","AEROTEAM","Aeroteam",45.43624,8.57737,null,[],"ulm"],["IT-0427","BOZZO","Andrea Bozzo",44.86374,7.40707,984,[],"ulm"],["IT-0071","SANT'ELIA","Sant'Elia",44.74196,7.70987,null,[["17","35",173,650,0]],"ulm"],["IT-0043","BOGLIETTO","Boglietto",44.75861,8.18306,610,[["10","28",103,749,0]],"ulm"],["IT-0228","CERUTTI","Gianni Cerutti",45.34921,8.64632,393,[["17","35",173,399,0]],"ulm"],["IT-0511","CERIELLA","La Ceriella",45.22014,8.65954,null,[],"ulm"],["IT-0434","AIRONE","L'Airone",45.15273,8.65522,338,[],"ulm"],["IT-0218","VOLOPURO","Volopuro",45.56409,8.54184,null,[],"ulm"],["IT-0037","MERLO","Merlo Romano",44.83443,7.36357,1000,[["10","28",103,449,0]],"ulm"],["IT-0068","CHATELAIR","Chatelair",45.74,7.48056,1500,[],"ulm"],["IT-0767","S. MICHELE","San Michele NO11",45.66137,8.48094,912,[],"ulm"],["IT-0040","M. INGEGNO","Marc Ingegno",45.77806,8.26861,1411,[],"ulm"],["IT-0192","LE STREGHE","Le Streghe",45.39452,8.70693,410,[["16","34",163,339,0]],"ulm"],["IT-0549","VERBANO","Verbano Fly",45.67637,8.48646,null,[],"ulm"],["LILA","LILA","Alessandria",44.92563,8.62673,299,[["03","21",33,640,0]],"aero"],["LIMN","LIMN","Cameri (militare)",45.5296,8.66922,586,[["17","35",168.0,2992,1]],"aero"],["IT-0067","CHAMOIS","Chamois",45.8335,7.61765,5600,[],"alti"],["LIMW","LIMW","Aosta",45.73855,7.3683,1791,[["09","27",85.0,1246,1]],"aero"],["IT-0472","LEONARDO DA V","Leonardo da Vinci",45.28833,8.8,358,[["06L","24R",63,649,0]],"ulm"],["IT-0790","GRANTA PAREÌ","Granta Pareì ghiacciaio",45.49264,7.06053,null,[],"glac"],["IT-0789","COL DI RHÉMES","Col di Rhémes",45.49614,7.05721,null,[],"glac"],["IT-0791","SASSIERE","Gh. de la Sassiere",45.49695,7.03797,null,[],"glac"],["IT-0047","CASCINA VALEN","Cascina Valentino",44.69544,7.40242,280,[],"ulm"],["IT-0196","NATALE/BATTIS","Natale/Battistoni",45.33496,8.82417,357,[["14","32",143,470,0]],"ulm"],["IT-0785","LYS","Ghiacciaio del Lys",45.91712,7.85535,null,[],"glac"],["IT-0800","SANT'ANNA DI","Sant'Anna di Saluzzo",44.65943,7.45636,981,[],"ulm"],["IT-0054","IL PICCHIO","Il Picchio",45.70873,8.59571,699,[],"ulm"],["IT-0801","ALI SUL PO","Ali sul Po",44.65734,7.44981,991,[],"ulm"],["IT-0057","PIOVERA","Piovera",44.93583,8.74933,312,[],"ulm"],["IT-0118","MEZZANA BIGLI","Mezzana Bigli",45.06541,8.83518,null,[["03","21",33,800,0]],"ulm"],["LIMC","LIMC","Milano Malpensa",45.6306,8.72811,768,[["17L","35R",170.0,3920,1],["17R","35L",170.0,3920,1]],"aero"],["IT-0784","NEVAIO DEL FA","Nevaio del Fallére",45.75881,7.18948,null,[],"glac"],["IT-0038","ACQUI TERME","Acqui Terme",44.67749,8.50124,430,[],"ulm"],["FR-0293","LA TOVIÈRE","La Tovière",45.46567,6.93239,7349,[],"alti"],["IT-0977","CÀ DEL PIERPA","Cà del Pierpa",44.89918,8.7827,299,[],"ulm"],["IT-0504","MANTOVANA","Mantovana",44.72663,8.59373,738,[],"ulm"],["IT-0111","NAVIGLI","Navigli",45.41441,8.89507,374,[],"ulm"],["IT-0064","PLOIA","Ploia",44.88417,8.78083,420,[],"ulm"],["LILG","LILG","Vergiate",45.71263,8.70071,863,[["16","34",163,800,0]],"aero"],["LIMZ","LIMZ","Cuneo Levaldigi",44.54746,7.62305,1267,[["03","21",32.0,2104,1]],"aero"],["FR-0273","GRANDE MOTTE","Glacier de la Grande Motte",45.425,6.89444,9564,[],"glac"],["IT-0780","RUTOR GLACIER","Rutor Glacier",45.63222,7.00542,10830,[],"glac"],["IT-0786","CHAMPILLON","Champillon",45.85064,7.27391,null,[],"alti"],["IT-0783","BRAOULÉ","Ghiacciaio del Braoulé",45.95113,7.52853,null,[],"glac"],["FR-0313","COL DU PALET","Col du Palet",45.45045,6.8826,8005,[],"glac"],["IT-0782","MONT GELÉ","Gh. del Mont Gelé",45.90268,7.36571,null,[],"glac"],["IT-0063","COUNTRY FLY","Country Fly",44.50306,7.82167,1350,[["18","36",183,420,0]],"ulm"],["IT-0059","CITTÀ DI TORT","Città di Tortona",44.93844,8.86588,315,[],"ulm"],["IT-0138","AIR FOLIES","Air Folies",45.53297,8.90103,558,[["16","34",163,289,0]],"ulm"],["IT-0756","PIAN MUNE'","Pian Mune'",44.6458,7.24493,4905,[["04","22",43,99,0]],"alti"],["IT-0044","BELTRUTTA","Beltrutta",44.49651,7.72297,1174,[],"ulm"],["IT-0710","CASCINA ROSIO","Cascina Rosio",45.41609,8.96513,384,[["16","34",16.0,509,0]],"ulm"],["LFKD","LFKD","Sollières Sardières",45.2538,6.80114,4255,[],"alti"],["LIMR","LIMR","Novi Ligure Eugenio Mossi",44.78,8.78639,607,[["18","36",183,925,0]],"aero"],["IT-0052","FRANCAVILLA B","Francavilla Bisio",44.72987,8.73007,525,[],"ulm"],["IT-0341","OASI","Oasi",45.69656,8.82695,980,[["18","36",183,390,0]],"ulm"],["VB02","MEGOLO","Megolo",45.99625,8.30313,709,[["12L","30R",123,359,0]],"ulm"],["IT-0379","ROSANGELES","Rosangeles",45.36298,9.01706,360,[["16","34",163,600,0]],"ulm"],["IT-0112","VOLO CLUB MIL","Volo Club Milano",45.44944,8.99833,335,[],"ulm"],["IT-0273","GIULIANO BORG","Giuliano Borgonovi",45.1871,9.04282,203,[],"ulm"],["LILC","LILC","Calcinate del Pesce",45.8097,8.76806,797,[],"aero"],["FR-0272","CHIAUPE","Altisurface du Glacier de la Chiaupe",45.49167,6.775,10170,[],"glac"],["IT-0062","BOSIO GUIDO","Bosio Guido",44.43421,7.63215,1500,[["06","21",63,480,0]],"ulm"],["IT-0034","GIANCARLO FIL","Giancarlo Filippi",44.41437,7.81128,1411,[],"ulm"],["LILH","LILH","Voghera-Rivanazzano",44.952,9.01653,423,[["16","34",159.6,1000,1]],"aero"],["LILN","LILN","Varese-Venegono",45.7422,8.88823,1100,[["17","35",176.0,1420,1]],"aero"],["IT-0554","ALTA LANGA","Alta Langa",44.41115,8.12085,627,[["16","34",163,385,0]],"ulm"],["IT-0056","ALPI MARITTIM","Alpi Marittime",44.39111,7.72556,1457,[["06","24",63,480,0]],"ulm"],["IT-0208","MACCAGNO","Maccagno",44.4236,7.45913,null,[],"ulm"],["IT-0792","MIRAVIDI BREU","Gh. del Miravidi breul",45.71196,6.82283,null,[],"glac"],["LSYR","ROSA BLANCHE","Rosa Blanche Mountain Landing Site",46.06083,7.35472,null,[],"glac"],["CH-0003","PRASFLEURI","Altisurface du Glacier de Prasfleuri",46.06429,7.35432,null,[],"glac"],["IT-0793","LÉCHAUD","Gh. del Léchaud",45.73186,6.81623,null,[],"glac"],["IT-0049","CHAVEZ-MARINI","Chavez-Marini",46.13417,8.30633,922,[["01","19",13,779,0],["18","36",178.0,600,1]],"ulm"],["IT-0078","PROSECCO","Prosecco",45.70333,13.75972,820,[],"ulm"],["IT-0079","LA SPEZIANA","La Speziana",45.12854,9.36287,459,[],"ulm"],["IT-0080","MAZARACK FLYI","Mazarack Flying",45.63944,12.94361,null,[],"ulm"],["IT-0081","PRADELLE","Pradelle",45.49278,10.11988,341,[],"ulm"],["IT-0084","VERVÒ","Vervò",46.3138,11.1119,3080,[],"ulm"],["IT-0085","SAMOLACO","Samolaco",46.23469,9.43277,689,[["14","32",143,366,0]],"ulm"],["IT-0086","LIKL","La Comina",45.99185,12.65399,200,[],"aero"],["IT-0087","LIKO","Guglielmo Zamboni",44.475,11.54166,98,[["03","21",33,840,1]],"aero"],["IT-0091","TERMON ALTIPO","Termon Altiport",46.27083,11.02583,2231,[],"ulm"],["IT-0103","ALI DI CLASSE","Ali di Classe",44.32342,12.30758,3,[["15","33",148.0,660,0]],"ulm"],["IT-0104","VILLAFRANCA","Villafranca",44.29111,12.02611,100,[],"ulm"],["IT-0105","LYRA 34","Lyra 34",44.50028,11.94444,36,[],"ulm"],["IT-0106","ALI FILANTI","Ali Filanti",44.58222,11.92306,20,[],"ulm"],["IT-0108","LE MERLINE","Le Merline",44.97287,9.47914,300,[],"ulm"],["IT-0109","ARBUSCHI","Arbuschi",45.05139,9.16325,223,[],"ulm"],["IT-0110","DOVERA","Dovera",45.38031,9.53495,259,[],"ulm"],["IT-0113","LIKE","Litorale di Caorle",45.61194,12.81472,1,[["11","29",113,800,0]],"aero"],["IT-0114","ZAMPIERI","Zampieri",46.40433,12.88536,3281,[],"ulm"],["IT-0115","STERZING / VI","Sterzing / Vipiteno",46.88376,11.44134,3116,[],"ulm"],["IT-0116","PASSO DEL TON","Passo del Tonale",46.26513,10.60066,6550,[],"alti"],["IT-0128","FIORANO WINGS","Fiorano Wings",45.11933,9.70595,null,[],"ulm"],["IT-0129","LIKI","Caposile",45.56529,12.57684,null,[],"aero"],["IT-0130","AQUILE RANDAG","Aquile Randagie",45.16563,11.03503,66,[],"ulm"],["IT-0133","CDV ASS.SP. P","CdV Ass.Sp. Parvolo",45.81556,12.75222,16,[],"ulm"],["IT-0134","CAREAS","Careas",45.50668,9.66814,null,[],"ulm"],["IT-0135","LA ZAPPAGLIA","La Zappaglia",45.32675,10.37841,216,[],"ulm"],["IT-0136","VIGAROLO","Vigarolo",45.21753,9.46723,220,[["16","34",163,650,0]],"ulm"],["IT-0137","LA FENICE","La Fenice",44.99988,10.71329,66,[],"ulm"],["IT-0140","PRAVISDOMINI","Pravisdomini",45.82177,12.68341,null,[],"ulm"],["IT-0141","ALI VENETE","Ali Venete",45.66488,11.80745,164,[],"ulm"],["IT-0142","IL PIONIERO","Il Pioniero",45.08398,11.66322,36,[["09","27",93,450,0]],"ulm"],["IT-0143","\"SAN GIUSEPPE","\"San Giuseppe\"",45.85649,12.06555,419,[],"ulm"],["IT-0144","ALLA COLOMBAR","Alla Colombara Airiield",45.75285,11.6925,328,[],"ulm"],["IT-0146","CÀ DEL CONTE","Cà del Conte",44.87017,9.93816,null,[["01","19",13,720,0]],"ulm"],["IT-0147","BORGOTARO ALB","Borgotaro Albareto",44.46456,9.71581,1450,[],"ulm"],["IT-0149","LE TARTARUGHE","Le Tartarughe Volanti",45.60972,9.48667,646,[["16","34",163,450,0]],"ulm"],["IT-0150","FRANCESCO BAR","Francesco Baracca",45.8422,12.19359,269,[["15","33",153,1000,0]],"ulm"],["IT-0157","ALI DEL PO PR","Ali del Po Private",44.97112,10.29428,92,[["02","20",23,530,0]],"ulm"],["IT-0160","CASTEL CALADA","Castel Caladan",45.46131,9.57668,46,[],"ulm"],["IT-0162","BLUE SILO","Blue Silo",45.88722,12.62778,31,[],"ulm"],["IT-0167","CERESARA","Ceresara",45.26369,10.58255,138,[],"ulm"],["IT-0170","KONG","Kong",45.76197,9.445,633,[["18","36",183,300,0]],"ulm"],["IT-0171","PIANCADA","Piancada",45.76417,13.07304,1,[["15","33",153,800,0]],"ulm"],["IT-0172","STELLA","Stella",44.95094,11.62722,6,[["10","28",103,500,0]],"ulm"],["IT-0173","FRIULI","Friuli",45.93098,13.362,null,[],"ulm"],["IT-0182","SAN FELICE","San Felice",44.8325,11.12083,90,[],"ulm"],["IT-0189","LIKH","Rivoli Avro",46.23379,13.07244,557,[["02","20",23,600,1]],"aero"],["IT-0190","BAIALUPO","Baialupo",45.5529,9.50567,489,[["11","29",113,450,0]],"ulm"],["IT-0194","SANTA LUCIA","Santa Lucia",45.48397,9.95318,357,[["01","19",13,650,0]],"ulm"],["IT-0195","CORRY'S","Corry's",45.51925,10.38068,541,[["14","32",143,400,0]],"ulm"],["IT-0198","RENO AIR","Reno Air",44.61292,11.32433,125,[],"ulm"],["IT-0200","SASSUOLO","Sassuolo",44.57167,10.78,311,[],"ulm"],["IT-0203","ROVIGO","Rovigo",45.03117,11.82367,22,[["17","35",173,650,0]],"ulm"],["IT-0204","SASSO D'ORO A","Sasso d'Oro Agrotourism",46.18139,12.8225,780,[["16","34",163,300,0]],"ulm"],["IT-0211","AL CASALE","Al Casale",45.98478,12.92354,148,[["09","27",93,500,0]],"ulm"],["IT-0217","VOLAVISIO","VolAvisio",46.27888,11.44837,2820,[],"ulm"],["IT-0221","MONTAGNANA","Montagnana",45.24522,11.42467,32,[["11","29",110.0,1000,0]],"ulm"],["IT-0231","CAVOLA","Cavola",44.39646,10.53613,1768,[["18","36",183,426,0]],"ulm"],["IT-0246","ALIVARA","AliVara",44.2277,9.72008,311,[],"ulm"],["IT-0249","WILLY IL COYO","Willy il Coyote",44.77183,10.83216,88,[],"ulm"],["IT-0250","VALERIO GLORI","Valerio Glorialanza",44.37611,9.29028,49,[],"ulm"],["IT-0251","SAN DALMAZIO","San Dalmazio",44.4125,10.84361,1870,[],"ulm"],["IT-0252","DELTA CULTURE","Delta Culture",44.57111,11.45167,115,[["12","30",123,290,0]],"ulm"],["IT-0253","CASTELLAZZO","Castellazzo",44.68333,10.73972,141,[],"ulm"],["IT-0254","CASSOLA","Cassola",45.74131,11.80655,321,[["17","35",173,430,0]],"ulm"],["IT-0255","MOLINELLA","Molinella",44.5982,11.65629,22,[["03","21",33,900,0]],"ulm"],["IT-0256","DI RUBBIANO","di Rubbiano",44.67195,10.06086,518,[["03","21",33,700,0]],"ulm"],["IT-0257","COLLI EUGANEI","Colli Euganei",45.20264,11.79372,13,[["01","19",13,550,0]],"ulm"],["IT-0258","SETTECROCIARI","Settecrociari",44.13595,12.18976,147,[["03","21",33,420,0]],"ulm"],["IT-0259","CAMPOGALLIANO","Campogalliano",44.70355,10.85416,118,[["18","36",183,380,0]],"ulm"],["IT-0260","OBIETTIVO VOL","Obiettivo Volare Aeroclub",44.88933,10.16022,141,[["03","21",33,500,0],["13","31",133,400,0]],"ulm"],["IT-0261","ACHILLE PRIVA","Achille Private",43.99883,12.10792,null,[],"ulm"],["IT-0263","TIGNES","Tignes",46.15401,12.34751,1676,[],"ulm"],["IT-0268","BANDA BASSOTT","Banda Bassotti",44.92637,11.05147,36,[["03","21",33,500,0]],"ulm"],["IT-0271","AGNEDO","Agnedo",46.04472,11.54194,null,[],"ulm"],["IT-0275","ARCOBALENO","Arcobaleno",44.49694,11.24361,null,[],"ulm"],["IT-0276","\"ALI DEL MONT","\"Ali del Montello\"",45.76157,12.16361,226,[],"ulm"],["IT-0284","PEGASO","Pegaso",45.31828,12.05696,null,[["05","23",53,400,0]],"ulm"],["IT-0285","PARCO LIVENZA","Parco Livenza",45.74027,12.70447,null,[],"ulm"],["IT-0286","LIVS","Skydive Venice",45.70001,12.76391,21,[],"aero"],["IT-0292","BLUE DEVIL CE","Blue Devil Centre",45.39239,10.12768,223,[],"ulm"],["IT-0293","LE PANIZZE","Le Panizze",45.41936,10.55735,337,[["13","31",133,770,0]],"ulm"],["IT-0297","ALI DELLA LIB","Ali della Libertà",44.51617,11.10008,null,[],"ulm"],["IT-0298","PHOENIX","Phoenix",44.74714,11.34161,39,[],"ulm"],["IT-0299","CREVA AIR","Creva Air",44.73733,11.18363,29,[],"ulm"],["IT-0300","PUNTO VOLO","Punto Volo",45.43792,9.60747,301,[["17","35",173,600,0]],"ulm"],["IT-0301","AGRITURISMO T","Agriturismo Turus",45.92371,13.54102,177,[["16","34",163,500,0]],"ulm"],["IT-0302","AS77","AS77",45.96108,13.20439,null,[],"ulm"],["IT-0303","LA FATTORIA","La Fattoria",45.29176,12.0758,6,[["10","28",103,400,0]],"ulm"],["IT-0304","BASE BRAVO","Base Bravo",45.39286,11.69265,45,[["18","36",183,400,0]],"ulm"],["IT-0305","DA DOMENICO","Da Domenico",45.23338,11.79794,13,[["01","19",13,450,0]],"ulm"],["IT-0306","PADOVA SUD","Padova Sud",45.32509,11.87292,21,[["01","19",13,180,0]],"ulm"],["IT-0307","LION","Dominio di Bagnoli",45.18395,11.85733,3,[],"aero"],["IT-0317","FANT AIR","Fant Air",46.08502,12.06871,925,[["03","21",33,400,0]],"ulm"],["IT-0319","SAN PAOLO","San Paolo",45.37866,10.03779,131,[["18","36",183,400,0]],"ulm"],["IT-0322","AERLIGHT FAEN","Aerlight Faenza",44.33475,11.9301,52,[["12","30",123,500,0]],"ulm"],["IT-0323","VALLEGAFFARO","Vallegaffaro",44.83441,12.23126,1,[["16","34",163,1000,0]],"ulm"],["IT-0325","CURTATONE CIT","Curtatone City San Silvestro",45.10155,10.7492,68,[["11","29",113,750,0]],"ulm"],["IT-0327","MANTOVA NORD","Mantova Nord",45.17218,10.85822,75,[["04","22",43,300,0]],"ulm"],["IT-0328","CĂ MANTOVANE","Că Mantovane",45.23948,10.88961,111,[["02","20",23,400,0]],"ulm"],["IT-0339","GLI AIRONI","Gli Aironi",44.46277,11.78961,22,[["13","31",133,550,0]],"ulm"],["IT-0340","DELTA CONSELI","Delta Conselice",44.54193,11.79218,9,[["10","28",103,700,0]],"ulm"],["IT-0352","AVIODELTA","Aviodelta",44.70659,10.24952,524,[["02","20",23,523,0]],"ulm"],["IT-0353","CAMPORE","Campore",44.82786,10.01078,459,[["03","21",33,431,0]],"ulm"],["IT-0354","LA TORRETTA","La Torretta",44.99319,10.0599,118,[["02","20",23,300,0]],"ulm"],["IT-0358","CORNEGLIANO","Cornegliano",45.28882,9.49156,null,[],"ulm"],["IT-0359","MASSALENGO","Massalengo",45.27542,9.48293,239,[["18","36",183,700,0]],"ulm"],["IT-0360","MEZZANA CASAT","Mezzana Casati",45.09826,9.73588,141,[["17","35",173,390,0]],"ulm"],["IT-0362","GRAGNANO","Gragnano",45.0,9.582,285,[],"ulm"],["IT-0366","BEDIZZOLE","Bedizzole",45.51851,10.44958,623,[["04","22",43,675,0]],"ulm"],["IT-0369","VOLO LEGGERO","Volo Leggero",45.26178,11.1929,62,[],"ulm"],["IT-0371","CA' QUINTA DI","Ca' Quinta di Sarego",45.43283,11.38333,114,[["07","25",73,400,0]],"ulm"],["IT-0372","SAN MAURO","San Mauro",46.06833,13.36688,351,[["09","27",93,690,0]],"ulm"],["IT-0374","ASOLO FLIGHT","Asolo Flight",45.75833,11.89611,252,[],"ulm"],["IT-0375","SAN MARCO VOL","San Marco Volo",45.77104,11.99656,348,[],"ulm"],["IT-0376","MONTEBELLUNA","Montebelluna",45.74818,12.05715,275,[],"ulm"],["IT-0377","DELTASPORT","Deltasport",44.65356,10.99159,null,[["02","20",23,380,0]],"ulm"],["IT-0397","ALI FRIULI","Ali Friuli",46.05649,13.42625,370,[],"ulm"],["IT-0399","ALIVENETA","Aliveneta",45.25093,11.03606,75,[["08","26",83,500,0]],"ulm"],["IT-0400","ALI DEL BRENT","Ali del Brenta",45.15713,12.11076,1,[["03","21",33,300,0]],"ulm"],["IT-0402","AL RANCH","Al Ranch",45.92343,13.03559,null,[],"ulm"],["IT-0403","ALWAYS","Always",46.13388,13.27822,344,[["17","35",173,310,0]],"ulm"],["IT-0405","CHIASIELLIS","Chiasiellis",45.94493,13.2084,118,[["16","34",163,400,0]],"ulm"],["IT-0406","FLY SYNTHESIS","Fly Synthesis",45.96867,13.23355,167,[["10","28",103,700,0]],"ulm"],["IT-0407","FLY EVOLUTION","Fly Evolution Flying",45.98198,13.30692,187,[["15","33",153,400,0]],"ulm"],["IT-0408","PRANOVI","Pranovi",45.37183,12.03715,1,[["03","21",33,530,0]],"ulm"],["IT-0415","VALEGGIO SUL ","Valeggio sul Mincio",45.31743,10.70842,null,[],"ulm"],["IT-0416","ARCADIA","Arcadia",45.50084,10.78906,null,[],"ulm"],["IT-0419","SAN SISTO DI ","San Sisto di Poviglio",44.84714,10.5055,98,[["01","19",13,290,0]],"ulm"],["IT-0420","TOP GUN","Top Gun",44.6823,10.56865,259,[],"ulm"],["IT-0428","LA CANONICA","La Canonica",45.63547,12.3406,null,[],"ulm"],["IT-0429","ALBATROS","Albatros",45.77073,12.24407,164,[],"ulm"],["IT-0430","DREAM FLY","Dream Fly",45.93038,12.25751,null,[],"ulm"],["IT-0431","BUTTERFLY 2","Butterfly 2",45.85255,12.45734,52,[],"ulm"],["IT-0438","ALILAFER","AliLafer",45.03368,9.79186,147,[],"ulm"],["IT-0445","SANTARCANGELO","Santarcangelo",44.03054,12.4267,210,[],"ulm"],["IT-0461","GROANE","Groane",45.56612,9.1097,null,[],"ulm"],["IT-0462","COGLIATE","Cogliate",45.63974,9.06596,null,[],"ulm"],["IT-0463","PASIANO","Pasiano",45.83227,12.59356,19,[],"ulm"],["IT-0464","CORDOVADO","Cordovado",45.83652,12.89261,39,[],"ulm"],["IT-0476","CARZAGO RIVIE","Carzago Riviera",45.51679,10.46476,639,[["15","33",15.0,633,0]],"ulm"],["IT-0478","AZZANELLO","Azzanello",45.29384,9.91928,159,[],"ulm"],["IT-0480","STURARO","Sturaro",45.19639,12.06889,10,[],"ulm"],["IT-0481","I QUATTRO CAN","I Quattro Cantoni",44.80306,11.13833,null,[],"ulm"],["IT-0482","CARZETO","Carzeto",44.96,10.18389,20,[],"ulm"],["IT-0491","SAN FELICE-TR","San Felice-Trichiana",46.08472,12.12105,984,[],"ulm"],["IT-0492","VRAGLIA","Vraglia",44.41321,11.74729,null,[],"ulm"],["IT-0495","BIGARELLO PRI","Bigarello Private",45.17081,10.92906,70,[],"ulm"],["IT-0496","PELLIZZARIO","Pellizzario",45.29278,10.44667,140,[],"ulm"],["IT-0502","CURTATONE PRI","Curtatone Private",45.11221,10.70538,72,[],"ulm"],["IT-0505","FELONICA","Felonica",44.96694,11.35411,30,[],"ulm"],["IT-0506","TABULARIA","Tabularia",44.84979,10.56606,null,[],"ulm"],["IT-0508","GSIESERTAL / ","Gsiesertal / Valle di Casies",46.76578,12.15564,null,[],"ulm"],["IT-0509","SCORTICHINO","Scortichino",44.85908,11.35358,null,[["18","36",183,195,0]],"ulm"],["IT-0514","VALLECAMONICA","Vallecamonica",45.8559,10.14757,673,[],"ulm"],["IT-0518","GRAVE DI PAPA","Grave di Papadopoli Jonathan",45.78389,12.31677,141,[],"ulm"],["IT-0519","ALI PIACENZA","Ali Piacenza",45.03056,9.60556,213,[],"ulm"],["IT-0521","MEDOLE","Medole",45.33903,10.48094,230,[],"ulm"],["IT-0527","CORTE BARIANI","Corte Bariani",45.03319,11.72413,7,[],"ulm"],["IT-0530","CASALFIUMANES","Casalfiumanese",44.28966,11.62563,null,[],"ulm"],["IT-0532","VOLARE UN PO","Volare Un Po",45.01642,10.10007,100,[],"ulm"],["IT-0534","RIVALTELLA PR","Rivaltella Private",44.642,10.59176,null,[],"ulm"],["IT-0542","CASA BIANCA M","Casa Bianca Model",45.4666,10.34794,null,[],"ulm"],["IT-0556","PIANON ALTIPO","Pianon Altiport",46.14543,12.42808,3001,[],"ulm"],["IT-0613","CASERA RAZZO ","Casera Razzo Altiport",46.47682,12.61476,5766,[],"alti"],["IT-0620","LOCHER","Locher",46.60078,11.3801,3000,[],"ulm"],["IT-0679","BARBARANO MOS","Barbarano Mossano Private",45.39803,11.54989,-1,[],"ulm"],["IT-0715","SKYDIVE ISEO","Skydive Iseo",45.8163,10.09624,623,[],"ulm"],["IT-0751","ARCA-BESSICA","Arca-Bessica",45.74325,11.83564,276,[],"ulm"],["IT-0757","ALINO","Alino",46.22133,11.1697,1729,[["10","28",10.0,100,0]],"ulm"],["IT-0761","EUROFLY","Eurofly",45.69051,11.74681,null,[],"ulm"],["IT-0764","DOSOLO","Dosolo",44.96078,10.63557,69,[],"ulm"],["IT-0766","AZIENDA AGRIC","Azienda Agricola Balduit Giuliano",45.73732,13.44837,-9,[],"ulm"],["IT-0768","BALBIDO","Balbido",46.00909,10.82986,2176,[],"ulm"],["IT-0769","RONZO-CHIENIS","Ronzo-Chienis Paraglider",45.90194,10.97595,null,[],"ulm"],["IT-0770","EVI","Evi",45.90137,12.13299,486,[],"ulm"],["IT-0771","PERLIERA","Perliera",45.05877,11.62267,16,[],"ulm"],["IT-0774","ROVIGO EST","Rovigo Est",45.13046,11.97921,7,[],"ulm"],["IT-0777","TRENS","Trens",46.87366,11.47297,null,[],"ulm"],["IT-0781","BEVERINO","Beverino",44.19713,9.80555,171,[],"ulm"],["IT-0787","FABBRO PRIVAT","Fabbro Private",44.79485,11.58911,20,[],"ulm"],["IT-0788","VALSAMOGGIA-B","Valsamoggia-Braglie",44.49545,11.10378,299,[],"ulm"],["IT-0978","ANZANO DEL PA","ANZANO DEL PARCO EA",45.77776,9.21571,324,[],"ulm"],["IT-0979","ISOLONE","Isolone",45.09135,9.66593,46,[],"ulm"],["IT-0980","IL GO - LE CA","Il Go - Le Caminaglie",44.97634,9.49446,470,[],"ulm"],["IT-0981","VALTIDONE","Valtidone",45.02639,9.43536,338,[],"ulm"],["LIDA","LIDA","Asiago Romeo Sartori",45.88616,11.51586,3409,[["08L","26R",76.0,1120,1],["08R","26L",75.2,1100,0]],"aero"],["LIDB","LIDB","Belluno Arturo dell'Oro",46.16655,12.25039,1240,[["05","23",53,812,0]],"aero"],["LIDC","LIDC","Cà Negra Private",45.08608,12.16146,1,[],"aero"],["LIDE","LIDE","Reggio Emilia",44.69804,10.66488,152,[["11","29",108.0,1210,1]],"aero"],["LIDG","LIDG","Lugo Francesco Baracca",44.39748,11.85478,62,[["03","21",3.0,800,1]],"aero"],["LIDH","LIDH","Thiene Arturo Ferrarin",45.67783,11.49631,335,[["17","35",173,1200,0]],"aero"],["LIDL","LIDL","Legnago",45.13012,11.29322,30,[["16","34",163,610,0]],"aero"],["LIDP","LIDP","Pavullo",44.32222,10.83167,2244,[["02","20",18.0,1190,1]],"aero"],["LIDR","LIDR","Ravenna",44.36429,12.225,1,[["08","26",81.0,1200,1]],"aero"],["LIDT","LIDT","Trento-Mattarello",46.02333,11.125,610,[["18","36",181.0,1130,1]],"aero"],["LIDU","LIDU","Carpi-Budrione",44.83323,10.87119,69,[["02","20",23,850,1]],"aero"],["LIDV","LIDV","Prati Vecchi d'Aguscello",44.79088,11.6719,20,[["10","28",109.0,1175,0]],"aero"],["LIDW","LIDW","Luciano Narder",45.6992,12.5431,7,[["15","33",153,750,0]],"aero"],["LIGT","LIGT","San Genesio",46.57279,11.30763,4259,[["15","33",153,200,0]],"aero"],["LILB","LILB","Alzate Brianza",45.76964,9.16233,1260,[["03","21",33,600,1]],"aero"],["LILO","LILO","Caiolo Sondrio",46.15445,9.79507,899,[["09","27",85.0,1050,1]],"aero"],["LILR","LILR","Cremona-Migliaro",45.16826,10.00186,161,[["11","29",113,650,1]],"aero"],["LILV","LILV","Valbrembo",45.71986,9.59395,745,[["02L","20R",23,700,0],["02R","20L",20.0,805,1]],"aero"],["LIMB","LIMB","Milano-Bresso",45.54139,9.20222,484,[["18","36",180.0,1080,1]],"aero"],["LIME","LIME","Il Caravaggio International",45.66936,9.70885,782,[["10","28",105.0,2874,1],["12","30",121.0,714,1]],"aero"],["LIMG","LIMG","Riviera Villanova d'Albenga International",44.0506,8.12743,148,[["09","27",94.0,1432,1]],"aero"],["LIMJ","LIMJ","Genoa Cristoforo Colombo",44.41204,8.84073,13,[["10","28",105.0,2915,1]],"aero"],["LIML","LIML","Milano Linate",45.4451,9.27674,353,[["17","35",176.0,2442,1]],"aero"],["LIMP","LIMP","Parma",44.82635,10.29705,161,[["02","20",17.0,2122,1]],"aero"],["LIMS","LIMS","Piacenza San Damiano Air Base",44.91442,9.72232,456,[["12","30",118.4,2996,1]],"aero"],["LIPA","LIPA","Aviano Air Base",46.0319,12.5965,410,[["05","23",48.0,2606,1]],"aero"],["LIPB","LIPB","Bolzano",46.45925,11.32612,789,[["01","19",10.0,1740,1],["01R","19L",11.0,709,0]],"aero"],["LIPC","LIPC","Cervia Air Base",44.2242,12.3072,18,[["11","29",116.0,3050,1]],"aero"],["LIPD","LIPD","Udine-Campoformido",46.0308,13.18225,305,[["04","22",43,730,0]],"aero"],["LIPE","LIPE","Bologna Guglielmo Marconi",44.5354,11.2887,123,[["12","30",117.0,2803,1]],"aero"],["LIPF","LIPF","Ferrara-San Luca",44.81233,11.61388,20,[],"aero"],["LIPG","LIPG","Gorizia Duca d'Aosta",45.9069,13.5993,207,[["09","27",85.0,1250,0]],"aero"],["LIPH","LIPH","Treviso",45.6484,12.1944,59,[["07","25",69.0,2420,1]],"aero"],["LIPI","LIPI","Udine-Rivolto Air Base",45.9787,13.0493,179,[["06","24",59.0,2550,1]],"aero"],["LIPK","LIPK","Forlì-Luigi Ridolfi International",44.1948,12.0701,97,[["12","30",117.0,2410,1]],"aero"],["LIPL","LIPL","Ghedi Air Base",45.43255,10.26861,333,[["13","31",135.0,2991,1]],"aero"],["LIPM","LIPM","Modena-Marzaglia",44.63139,10.80861,184,[["11","29",113,800,1]],"aero"],["LIPN","LIPN","Verona-Boscomantico",45.472,10.9279,286,[["08","26",74.7,1014,1]],"aero"],["LIPO","LIPO","Brescia Gabriele d'Annunzio",45.4289,10.3306,355,[["14","32",135.0,2990,1]],"aero"],["LIPQ","LIPQ","Trieste",45.82786,13.46667,39,[["09","27",90.0,3000,1]],"aero"],["LIPR","LIPR","Federico Fellini International",44.02002,12.6122,40,[["12","30",128.0,2996,1]],"aero"],["LIPS","LIPS","Istrana Air Base",45.68438,12.08659,137,[["08","26",82.0,2992,1]],"aero"],["LIPU","LIPU","Padova Gino Allegri",45.39532,11.84712,44,[["04","22",40.0,1122,1]],"aero"],["LIPV","LIPV","Venice-Lido Giovanni Nicelli",45.42878,12.38873,15,[["05","23",53,994,0]],"aero"],["LIPX","LIPX","Verona Villafranca Valerio Catullo",45.39496,10.8873,239,[["04","22",46.0,3068,1]],"aero"],["LIPZ","LIPZ","Venice Marco Polo",45.5053,12.3519,7,[["04L","22R",42.0,2780,1],["04R","22L",42.0,3300,1]],"aero"],["LIQW","LIQW","Sarzana-Luni Bartolomeo Arrigoni",44.08738,9.98788,45,[["18","36",183,905,1]],"aero"],["LIVD","LIVD","Dobbiaco-Toblach",46.72702,12.23072,4068,[],"aero"]];
 const KIND_TXT={aero:'aeroporto',ulm:'aviosuperficie',alti:'altiporto',glac:'ghiacciaio · solo sci'};
 const KIND_COL={aero:'#33e1ff',ulm:'#e8f6ee',alti:'#ffb35c',glac:'#9ad8ff'};
 const FIELDS=FIELDS_RAW.map(([id,short,name,lat,lon,elft,rw,kind])=>({id,short,name,lat,lon,elft,kind,
@@ -875,7 +882,7 @@ function tape(side,val,step,majStep,ppu,fmt,unit,arcs,bug){
   }
   ctx.textBaseline='middle'; ctx.strokeStyle=C.white; ctx.fillStyle=C.white;
   const half=R/ppu, vmin=val-half, vmax=val+half;
-  for(let v=Math.ceil(vmin/step)*step; v<=vmax; v+=step){
+  for(let v=Math.ceil(vmin/step)*step, nT=0; v<=vmax && nT<400; v+=step, nT++){
     const y=CY+(val-v)*ppu, maj=(Math.round(v)%majStep===0), tk=maj?R*0.10:R*0.05;
     ctx.lineWidth=maj?2*k:1.2*k; ctx.beginPath();
     if(side<0){ ctx.moveTo(x1-tk,y); ctx.lineTo(x1,y); } else { ctx.moveTo(x0,y); ctx.lineTo(x0+tk,y); }
@@ -1287,7 +1294,7 @@ function simStep(h){
     S.alt=(terrain(ac0.E,ac0.N)+3)/FT2M;
   } else if(S.auto){
     const A=NAV.app, flare=A&&A.idx===4&&g.leg&&g.leg.rem<25;
-    const iasT=flare?ARCS.vs0*1.25:(A?(A.idx>=2?95:(A.idx===1?105:115)):115);
+    const iasT=flare?ARCS.vs0*1.25:(A?(A.idx>=2?95:(A.idx===1?105:SIM_CRUISE)):SIM_CRUISE);
     S.roll+=(g.cmdRoll-S.roll)*Math.min(1,1.4*h);
     if(flare) S.pitch+=(8-S.pitch)*Math.min(1,1.2*h); else S.pitch+=(g.cmdPitch-S.pitch)*Math.min(1,1.0*h);
     S.ias+=(iasT-S.ias)*Math.min(1,(flare?0.5:0.4)*h);
@@ -1329,7 +1336,7 @@ let FRAME_OK=0;
 function frameBody(now){
   if(LIVE.any && S.auto){ S.auto=false; el('auto').checked=false; }      // con dati veri la simulazione non riparte mai
   const dt=Math.min(0.05,(now-last)/1000); last=now;
-  const warp=S.auto?(NAV.roll?1.5:(NAV.app&&NAV.app.idx>=1?2:4)):1;
+  const warp=S.auto?(PH&&PH.sim?(NAV.roll?Math.min(2,PH.sim.warp):PH.sim.warp):(NAV.roll?1.5:(NAV.app&&NAV.app.idx>=1?2:4))):1;
   let rem=dt*warp; while(rem>1e-6){ const h=Math.min(0.05,rem); simStep(h); rem-=h; }
   const g=guidance();
   if(S.auto) syncInputs();
@@ -1775,7 +1782,7 @@ function learnPropose(seg,kind){
 //  in virata con la velocità GPS). Da internet: terreno vero (DEM), mappa di base, meteo.
 //  Le funzioni dichiarate qui sostituiscono quelle con lo stesso nome dello strumento.
 // =====================================================================================
-var PH=null, PH_nearFields=null;
+var PH=null, PH_nearFields=null, SIM_CRUISE=115;   // velocità di crociera della simulazione (km/h)
 
 // chiavi di memoria: le note dello strumento non devono sovrascrivere quelle del piano
 function phKey(k){ return k==='ia517_notes'?'ia517pfd_notes':k; }
@@ -1884,7 +1891,7 @@ function rasterMap(ac){
 }
 function fmtWind(){ return WIND.valid?`${String(Math.round(WIND.dir/10)*10).padStart(3,'0')}°/${Math.round(WIND.kmh)}${WIND.src==='prev'?' PREV':''}`:'---'; }
 function renderMenuPos(){
-  const q=PH&&PH.demo?'volo dimostrativo':(!S.gpsReal?'in attesa del GPS':(PH.src==='glo'?`GLO 2 · ${S.sats??'?'} sat · HDOP ${S.hdop??'?'}`:`GPS telefono ±${Math.round(PH.acc||0)} m`));
+  const q=PH&&PH.sim?'simulazione: '+PH.sim.name:PH&&PH.demo?'volo dimostrativo':(!S.gpsReal?'in attesa del GPS':(PH.src==='glo'?`GLO 2 · ${S.sats??'?'} sat · HDOP ${S.hdop??'?'}`:`GPS telefono ±${Math.round(PH.acc||0)} m`));
   el('menuPos').textContent=fmtCoord(S.lat,'N','S',2)+'  '+fmtCoord(S.lon,'E','W',3)+'  ·  '+q;
 }
 // niente servizio Raspberry: i dati restano sul telefono, il piano parla con lo strumento direttamente
@@ -1923,12 +1930,25 @@ PhMahony.prototype.update=function(gx,gy,gz,fx,fy,fz,dt){
 PhMahony.prototype.euler=function(){ const a=this;
   return [Math.atan2(2*(a.q0*a.q1+a.q2*a.q3),1-2*(a.q1*a.q1+a.q2*a.q2))*R2D,
           Math.asin(clamp(2*(a.q0*a.q2-a.q3*a.q1),-1,1))*R2D]; };
-// vario: quota GPS + accelerazione verticale, filtro complementare del 3° ordine
-function PhVario(tau){ this.h=NaN; this.v=0; this.ab=0; this.setTau(tau); }
+// vario: quota GPS + accelerazione verticale, filtro complementare del 3° ordine.
+// Stabile anche con fix irregolari: guadagni limitati per passo, riparte da capo dopo un buco lungo
+// o un salto grande, e senza GPS non integra l'accelerazione (niente deriva).
+function PhVario(tau){ this.h=NaN; this.v=0; this.ab=0; this.tc=0; this.setTau(tau); }
 PhVario.prototype.setTau=function(t){ this.k1=3/t; this.k2=3/(t*t); this.k3=1/(t*t*t); };
-PhVario.prototype.predict=function(aUp,dt){ if(this.h!==this.h) return; const a=aUp-this.ab; this.h+=this.v*dt+0.5*a*dt*dt; this.v+=a*dt; };
-PhVario.prototype.correct=function(hm,dt){ if(this.h!==this.h){ this.h=hm; this.v=0; this.ab=0; return; }
-  const e=hm-this.h; this.h+=this.k1*e*dt; this.v+=this.k2*e*dt; this.ab=clamp(this.ab-this.k3*e*dt,-1.5,1.5); };
+PhVario.prototype.reset=function(hm){ this.h=hm; this.v=0; this.ab=0; this.tc=performance.now(); };
+PhVario.prototype.predict=function(aUp,dt){
+  if(!(this.h===this.h)) return;
+  if(performance.now()-this.tc>3000){ this.v*=0.97; return; }        // GPS fermo: niente integrazione, il vario torna a zero
+  const a=clamp(aUp,-6,6)-this.ab; this.h+=this.v*dt+0.5*a*dt*dt; this.v=clamp(this.v+a*dt,-40,40); };
+PhVario.prototype.correct=function(hm,dt){
+  if(!isFinite(hm)) return;
+  const e=hm-this.h;
+  if(!isFinite(this.h) || !isFinite(this.v) || !(dt>0) || dt>3){ this.reset(hm); this.out=0; return; }
+  if(Math.abs(e)>150){ this.out=(this.out||0)+1; if(this.out>=3){ this.reset(hm); this.out=0; } return; }   // un fix isolato fuori misura si scarta
+  this.out=0;
+  const d=Math.min(dt,1);
+  this.h+=Math.min(0.9,this.k1*d)*e; this.v=clamp(this.v+Math.min(0.5/d,this.k2*d)*e,-40,40);
+  this.ab=clamp(this.ab-this.k3*e*d,-1.5,1.5); this.tc=performance.now(); };
 
 // ---------------- alba e tramonto (algoritmo NOAA semplificato) ----------------
 function phSun(date,lat,lon){
@@ -2246,7 +2266,7 @@ PH.checkSun=function(){
 
 // ---- terreno: quote dei campi senza quota nei dati ----
 PH.fieldElev=function(){
-  for(const f of FIELDS){
+  for(const f of (PH.nearF||[])){          // solo i campi vicini: niente tessere del terreno scaricate per tutto il Nord
     if(ELEV_CONFIRMED[f.id]!=null || f.elft!=null) { f.elevUnknown=false; continue; }
     const z=phDemAt(f.lat,f.lon,11);
     if(z===z){ if(f.elevUnknown!==false || Math.abs(f.elev-z)>1){ f.elev=z; f.elevUnknown=false; f.elevSrc='DEM'; } }
@@ -2424,10 +2444,11 @@ PH.wx=lsGet('ia517p_wx',{});
 
 // ---------------- interfaccia del telefono ----------------
 PH.show=function(v){
-  for(const [id,name] of [['phPiano','piano'],['phImp','imp'],['phInfo','info']]) el(id).hidden=v!==name;
+  for(const [id,name] of [['phPiano','piano'],['phImp','imp'],['phInfo','info'],['phSim','sim']]) el(id).hidden=v!==name;
   document.querySelectorAll('.ph-nav button').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v?'page':'false'));
   if(v==='imp') PH.renderImp();
   if(v==='info') PH.renderInfo();
+  if(v==='sim') PH.renderSim();
   if(v==='piano'){ try{ const w=el('phAppFrame').contentWindow; w.IA517_refresh&&w.IA517_refresh(); }catch(e){} }
   PH.layout();
 };
@@ -2465,7 +2486,7 @@ PH.info=function(g){
     card('phSun',hh,m>0?`tra ${Math.floor(m/60)}h${String(m%60).padStart(2,'0')}`:'già tramontato'); el('phSun').classList.toggle('warn',m<45); }
   const st=el('phStat'); if(st){
     const gpsOk=S.gpsReal&&!lost('gps'), attOk=!lost('att');
-    st.innerHTML=PH.demo?'<i class="w">DEMO</i> volo dimostrativo':
+    st.innerHTML=PH.sim?`<i class="w">SIMULAZIONE</i> ${String(PH.sim.name).replace(/</g,'')} · ×${PH.sim.warp} · tocca per fermare`:PH.demo?'<i class="w">DEMO</i> volo dimostrativo':
       `<i class="${gpsOk?'o':'b'}">${PH.src==='glo'?'GLO 2':'GPS'}</i><i class="${attOk?'o':'b'}">ASSETTO</i><i class="${PH.dem.size?'o':'w'}">TERRENO</i><i class="${navigator.onLine?'o':'w'}">NET</i>`;
   }
   if(S.gpsReal && !lost('att')) PH.seenAll=true;             // dopo il primo fix le perdite le segnalano le bandierine rosse
@@ -2477,13 +2498,15 @@ PH.afterFrame=function(g,dt){
   if(now-PH.lastHalf>500){ PH.lastHalf=now; try{ PH.info(g); }catch(e){} try{ PH.zoomBtns&&PH.zoomBtns(); }catch(e){} if(zi!==PH.ziSaved){ PH.ziSaved=zi; lsSet('ia517p_zoom',zi); } }
   if(now-PH.lastSec>1000){ PH.lastSec=now;
     try{ PH_nearFields(); }catch(e){}
+    try{ PH.simTick(); if(PH.sim && !el('phSim').hidden) PH.renderSim(); }catch(e){ console.error(e); }
     try{ PH.applyForecast(); PH.checkTerrain(); PH.checkAirspace(); PH.checkSun(); }catch(e){ console.error(e); }
     if(PH.demVer!==PH.demVerSeen && now-(PH.demRast||0)>1500){ PH.demVerSeen=PH.demVer; PH.demRast=now; MR.zi=-1; PH.fieldElev(); }
   }
 };
-PH.setDemo=function(on){
-  PH.demo=on; OBST.length=0; if(on) OBST.push(...OBST_SYN);
-  if(on){ LIVE.any=false; S.gpsReal=false; S.auto=true; el('auto').checked=true; PH.flight=null; toast('VOLO DIMOSTRATIVO'); }
+PH.setDemo=function(on,label){
+  PH.demo=on; OBST.length=0; if(on && !label) OBST.push(...OBST_SYN);
+  if(!on && PH.sim){ PH.sim=null; SIM_CRUISE=115; }
+  if(on){ LIVE.any=false; S.gpsReal=false; S.auto=true; el('auto').checked=true; PH.flight=null; toast(label||'VOLO DIMOSTRATIVO'); }
   else { S.auto=false; el('auto').checked=false; LIVE.any=true; LIVE.att=LIVE.gps=LIVE.air=LIVE.baro=0; PH.ahrsInit=false; toast('SENSORI DEL TELEFONO'); }
   MR.zi=-1; PH.renderImp&&!el('phImp').hidden&&PH.renderImp();
 };
@@ -2694,6 +2717,95 @@ PH.gloLine=function(line){
   if(PH.useGlo()) PH.applyFix(fx);
 };
 
+function demoTakeoff(){
+  if(PH && PH.sim){ PH.simEnd('atterrato'); return; }
+  S.alt+=400; S.ias=110; S.pitch=6; NAV.airborne=true; toast('DECOLLO (demo)'); nextDemo(); }
+
+// ---- simulazione di una rotta salvata o di un direct to ----
+PH.simCfg=function(){ return Object.assign({kind:'route',route:null,dest:'IT-0001',from:'IT-0074',start:'first',kmh:115,ft:2500,wdir:270,wkmh:10,warp:2},lsGet('ia517p_simcfg',{})); };
+PH.simStart=function(cfg){
+  lsSet('ia517p_simcfg',cfg);
+  let r=null, f=null, start=null, first=1;
+  if(cfg.kind==='route'){
+    r=ROUTES.find(x=>x.id===cfg.route);
+    if(!r||!Array.isArray(r.wps)||r.wps.length<2){ toast('SCEGLI UNA ROTTA CON ALMENO DUE PUNTI'); return false; }
+    if(cfg.start==='here' && S.gpsReal){ start={lat:S.lat,lon:S.lon}; first=0; } else start={lat:+r.wps[0].lat,lon:+r.wps[0].lon};
+  } else {
+    f=FIELDS.find(x=>x.id===cfg.dest); if(!f){ toast('SCEGLI LA DESTINAZIONE'); return false; }
+    const sf=FIELDS.find(x=>x.id===cfg.from);
+    start=(cfg.from==='here'||!sf)?{lat:S.lat,lon:S.lon}:{lat:sf.lat,lon:sf.lon};
+  }
+  const name=r?r.name:'DIRECT '+f.short;
+  PH.setDemo(true,'SIMULAZIONE: '+String(name).toUpperCase());
+  PH.sim={name,warp:cfg.warp,t0:simClock,dist:0,last:{lat:start.lat,lon:start.lon},cfg};
+  SIM_CRUISE=clamp(+cfg.kmh||115,60,250); SIM_WIND.dir=wrap360(+cfg.wdir||0); SIM_WIND.kmh=clamp(+cfg.wkmh||0,0,80);
+  NAV.roll=null; NAV.app=null; NAV.airborne=true;
+  S.lat=start.lat; S.lon=start.lon;
+  const a0=enu(S.lat,S.lon), gz=terrain(a0.E,a0.N);
+  S.alt=Math.max(((gz===gz?gz:250)+300)/FT2M, Math.min(+cfg.ft||2500,((gz===gz?gz:250)+300)/FT2M+500));   // si parte in volo, circa 1000 ft sul terreno
+  S.ias=SIM_CRUISE; S.pitch=2; S.roll=0; S.vs=0; S.slip=0;
+  if(r){ const rc=Object.assign({},r,{cruiseFt:+cfg.ft||r.cruiseFt||2500}); S.hdg=distBrg(start,r.wps[first]).brg; activateRoute(rc,first); }
+  else { S.hdg=distBrg(start,f).brg; directTo(f,+cfg.ft||2500); }
+  S.trk=S.hdg; PH.hdg=S.hdg; MR.zi=-1;
+  PH.act('simula '+name);
+  PH.show('volo');
+  return true;
+};
+PH.simEnd=function(why){
+  const P=PH.sim; if(!P) return;
+  const min=(simClock-P.t0)/60;
+  PH.simLast={name:P.name,why,min,km:P.dist/1000,at:NAV.lastDest||'',t:Date.now()}; lsSet('ia517p_simlast',PH.simLast);
+  toast(`SIMULAZIONE FINITA · ${why.toUpperCase()} · ${Math.round(min)} MIN · ${(P.dist/1000).toFixed(0)} km`);
+  PH.setDemo(false);
+  if(!el('phSim').hidden) PH.renderSim();
+};
+PH.simTick=function(){                       // ogni secondo
+  const P=PH.sim; if(!P) return;
+  const d=distBrg(P.last,S).d; if(d<20000) P.dist+=d; P.last={lat:S.lat,lon:S.lon};
+  if(NAV.dest && NAV.dest.kind==='wp' && NAV.wpDone && (!NAV.route || NAV.route.idx>=NAV.route.r.wps.length-1)) PH.simEnd('fine rotta');
+  else if(!NAV.dest && !NAV.roll && !NAV.app) PH.simEnd('nessuna destinazione');
+};
+PH.renderSim=function(){
+  const box=el('phSimBody'), c=PH.simCfg(), esc=x=>String(x==null?'':x).replace(/[&<>"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const seg=(id,opts,cur)=>`<div class="ph-seg" id="${id}">${opts.map(([v,l])=>`<button data-v="${v}" aria-pressed="${String(cur)===String(v)}">${l}</button>`).join('')}</div>`;
+  if(PH.sim){ const P=PH.sim, R_=NAV.route;
+    box.innerHTML=`<section><h3>Simulazione in corso</h3>
+      <div class="ph-row"><span>Rotta</span><small><b>${esc(P.name)}</b></small></div>
+      <div class="ph-row"><span>Prossimo</span><small>${NAV.dest?esc(NAV.dest.short):(NAV.roll?'in corsa sulla pista':'—')}${R_?` · punto ${R_.idx+1}/${R_.r.wps.length}`:''}</small></div>
+      <div class="ph-row"><span>Fatto</span><small>${(P.dist/1000).toFixed(1)} km · ${Math.round((simClock-P.t0)/60)} min di volo simulato</small></div>
+      <div class="ph-row"><span>Velocità del tempo</span></div>${seg('phSimWarpL',[[1,'×1'],[2,'×2'],[4,'×4'],[8,'×8']],P.warp)}
+      <div class="ph-btns"><button class="ph-btn pri" id="phSimView">Guarda lo strumento</button><button class="ph-btn" id="phSimStop">Ferma la simulazione</button></div></section>`;
+    el('phSimWarpL').querySelectorAll('button').forEach(b=>b.onclick=()=>{ P.warp=+b.dataset.v; const cc=PH.simCfg(); cc.warp=P.warp; lsSet('ia517p_simcfg',cc); PH.renderSim(); });
+    el('phSimView').onclick=()=>PH.show('volo');
+    el('phSimStop').onclick=()=>PH.simEnd('fermata a mano');
+    return; }
+  const routes=ROUTES.slice().sort((a,b)=>(b.updated||0)-(a.updated||0));
+  if(!routes.find(r=>r.id===c.route) && routes[0]) c.route=routes[0].id;
+  const ac=enu(S.lat,S.lon), fl=FIELDS.filter(f=>f.ends&&f.ends.length).map(f=>({f,d:Math.hypot(f.E-ac.E,f.N-ac.N)})).sort((a,b)=>a.d-b.d).slice(0,80);
+  const opt=(cur)=>fl.map(({f,d})=>`<option value="${esc(f.id)}" ${f.id===cur?'selected':''}>${esc(f.short)} · ${esc(f.name)} · ${(d/1000).toFixed(0)} km</option>`).join('');
+  const L=PH.simLast||lsGet('ia517p_simlast',null);
+  box.innerHTML=`<section><h3>Cosa volare</h3>${seg('phSimKind',[['route','Rotta salvata'],['direct','Direct to un campo']],c.kind)}
+    <div id="phSimRoute" ${c.kind==='route'?'':'hidden'}>${routes.length?routes.map(r=>`<label class="ph-chk"><input type="radio" name="phSimR" value="${esc(r.id)}" ${r.id===c.route?'checked':''}> <span><b>${esc(r.name)}</b> · ${r.wps.length} punti · ${routeKm(r).toFixed(0)} km</span></label>`).join(''):'<p class="ph-sub">Nessuna rotta salvata: creane una nel Piano (Rotte) o dal menu dello strumento (NUOVA ROTTA), poi torna qui.</p>'}
+      <div class="ph-row"><span>Partenza</span></div>${seg('phSimStart',[['first','Dal primo punto'],['here','Da dove sono']],c.start)}</div>
+    <div id="phSimDirect" ${c.kind==='direct'?'':'hidden'}>
+      <label class="ph-fld">Da<select id="phSimFrom"><option value="here" ${c.from==='here'?'selected':''}>Dove sono adesso</option>${opt(c.from)}</select></label>
+      <label class="ph-fld">A<select id="phSimDest">${opt(c.dest)}</select></label></div></section>
+  <section><h3>Volo</h3>
+    <div class="ph-btns"><label class="ph-fld">Crociera (km/h)<input id="phSimKmh" type="number" min="60" max="250" step="5" value="${c.kmh}"></label><label class="ph-fld">Quota (ft)<input id="phSimFt" type="number" min="500" max="12000" step="100" value="${c.ft}"></label></div>
+    <div class="ph-btns"><label class="ph-fld">Vento da (°)<input id="phSimWd" type="number" min="0" max="360" step="10" value="${c.wdir}"></label><label class="ph-fld">Vento (km/h)<input id="phSimWk" type="number" min="0" max="80" step="1" value="${c.wkmh}"></label></div>
+    <div class="ph-row"><span>Velocità del tempo</span></div>${seg('phSimWarp',[[1,'×1'],[2,'×2'],[4,'×4'],[8,'×8']],c.warp)}
+    <div class="ph-btns"><button class="ph-btn pri" id="phSimGo">Avvia la simulazione</button></div>
+    <p class="ph-sub">Lo strumento vola da solo la rotta: segue la guida, sceglie la pista col vento che hai messo, fa il circuito e atterra. Usa terreno, campi, spazi aerei e avvisi veri. Finché simuli, GPS e sensori del telefono restano fuori e il diario di volo non registra niente. Si ferma da sola all'atterraggio, oppure toccando la scritta SIMULAZIONE sopra i comandi.</p></section>
+  ${L?`<section><h3>Ultima simulazione</h3><div class="ph-row"><span>${esc(L.name)}</span><small>${esc(L.why)} · ${Math.round(L.min)} min · ${L.km.toFixed(0)} km</small></div></section>`:''}`;
+  const pick=(id,key)=>el(id).querySelectorAll('button').forEach(b=>b.onclick=()=>{ c[key]=isNaN(+b.dataset.v)?b.dataset.v:+b.dataset.v; lsSet('ia517p_simcfg',c); PH.renderSim(); });
+  pick('phSimKind','kind'); pick('phSimWarp','warp'); if(el('phSimStart')) pick('phSimStart','start');
+  box.querySelectorAll('input[name=phSimR]').forEach(i=>i.onchange=()=>{ c.route=i.value; lsSet('ia517p_simcfg',c); });
+  el('phSimGo').onclick=()=>{
+    Object.assign(c,{from:el('phSimFrom').value,dest:el('phSimDest').value,kmh:+el('phSimKmh').value||115,ft:+el('phSimFt').value||2500,wdir:+el('phSimWd').value||0,wkmh:+el('phSimWk').value||0});
+    const sel=box.querySelector('input[name=phSimR]:checked'); if(sel) c.route=sel.value;
+    PH.simStart(c); };
+};
+
 // ---- fotogrammi: tetto ai fotogrammi al secondo, misura del tempo di disegno, registro dei blocchi ----
 function frame(now){
   requestAnimationFrame(frame);
@@ -2703,6 +2815,7 @@ function frame(now){
     if(now-(P.lastDraw||0)<1000/PH.fps-3) return;
     P.lastDraw=now; }
   const t0=performance.now();
+  try{ PH&&PH.sane(); }catch(e){}
   try{ frameBody(now); FRAME_OK=now; }
   catch(e){ FRAME_ERR++; FRAME_LAST_ERR=String(e&&e.message||e);
     if(FRAME_ERR%120===1) console.error('fotogramma', e);
@@ -2711,6 +2824,16 @@ function frame(now){
   if(PH){ const P=PH.perf, d=performance.now()-t0; P.avg+=(d-P.avg)*0.05; if(d>P.max) P.max=d; P.n++;
     if(now-(P.hbT||0)>1000){ P.hbT=now; lsSet('ia517p_hb',{t:Date.now(),page:PAGE,zoom:ZOOMS[zi],base:PH.base,ms:Math.round(P.avg),max:Math.round(P.max),stalls:P.stalls,menu:!menuEl.hidden,prompt:!!PROMPT,demo:PH.demo,dem:PH.dem.size,tl:PH.tilesLoading||0,trail:PH.trail.slice(-15)}); P.max=0; } }
 }
+// valori impossibili (numeri enormi o non numeri) non arrivano mai al disegno
+PH.sane=function(){
+  const bad=v=>typeof v!=='number'||!isFinite(v), note=m=>{ if(PH.saneNote!==m){ PH.saneNote=m; PH.logErr&&PH.logErr(m); } };
+  if(bad(S.alt)||Math.abs(S.alt)>60000){ note('quota fuori scala ('+S.alt+'): ripresa dal GPS'); S.alt=isFinite(PH.mslRaw)?PH.mslRaw/FT2M:0; PH.vario.h=NaN; S.vs=0; }
+  if(bad(S.vs)||Math.abs(S.vs)>60){ S.vs=0; }
+  if(bad(S.gs)||S.gs>1500) S.gs=0; if(bad(S.ias)||S.ias>1500) S.ias=0;
+  if(bad(S.roll)||bad(S.pitch)){ note('assetto non valido: riparte'); S.roll=0; S.pitch=0; PH.attF=null; PH.ahrsInit=false; }
+  if(bad(S.hdg)) S.hdg=0; if(S.trk!=null&&bad(S.trk)) S.trk=null;
+  if(bad(S.lat)||bad(S.lon)||Math.abs(S.lat)>89){ S.lat=ORIGIN.lat; S.lon=ORIGIN.lon; }
+};
 PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeString().slice(0,8)+' '+a); if(PH.trail.length>30) PH.trail.splice(0,PH.trail.length-30); };
 // ---- avvio della parte telefono ----
 (function(){
@@ -2768,7 +2891,7 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
   // tastiera o telecomando Bluetooth (frecce, invio, tasti multimediali)
   document.addEventListener('keydown',e=>{
     if(e.target.closest && e.target.closest('input,textarea,select,#unit')) return;
-    if(!el('phImp').hidden || !el('phPiano').hidden) return;
+    if(!el('phImp').hidden || !el('phPiano').hidden || !el('phSim').hidden) return;
     const k2=e.key;
     if(k2==='ArrowRight'||k2==='ArrowUp'||k2==='MediaTrackNext'||k2==='PageDown'){ e.preventDefault(); rotate(1); }
     else if(k2==='ArrowLeft'||k2==='ArrowDown'||k2==='MediaTrackPrevious'||k2==='PageUp'){ e.preventDefault(); rotate(-1); }
@@ -2776,6 +2899,7 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
     else if(k2==='p'||k2==='P'){ closeMenu(); togglePage(); }
   });
   document.querySelectorAll('.ph-nav button').forEach(b=>b.addEventListener('click',()=>PH.show(b.dataset.v)));
+  el('phStat').addEventListener('click',()=>{ if(PH.sim) PH.show('sim'); });
   document.querySelectorAll('[data-close]').forEach(b=>b.addEventListener('click',()=>PH.show('volo')));
   el('phWaitDemo').onclick=()=>{ PH.setDemo(true); };
   el('phWaitClose').onclick=()=>{ PH.waitClosed=true; el('phWait').hidden=true; };
@@ -2812,6 +2936,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.9','Corretto il blocco vero: con il GPS irregolare (al chiuso) il filtro della quota diventava instabile e la quota arrivava a miliardi di metri, bloccando la scala della quota. Nuovo filtro stabile e protezioni nel disegno. Nuova scheda SIMULA: vola da sola una rotta salvata o un direct to, con velocità, quota, vento e tempo accelerato fino a ×8. Campi di tutto il Nord Italia da OurAirports: 342 tra aeroporti e aviosuperfici.'],
   ['1.0.8','Scatola nera: l\'app ricorda ultimo stato e ultime azioni; dopo un blocco, alla riapertura, li alleghi alla segnalazione da Info.'],
   ['1.0.7','Zoom della mappa fino a 700 km (tutto il Nord Italia): 19 scale da 1 a 700 km. Oltre 60 km i campi diventano puntini e restano scritti solo gli aeroporti; il terreno usa tessere più leggere e si scarica anche per il volo senza internet.'],
   ['1.0.6','Corretto il blocco nel passaggio fra mappa e orizzonte; app più leggera (30 fotogrammi al secondo, terreno ricalcolato meno spesso). Zoom della mappa con due dita, con i pulsanti + e − e con 12 scale da 1 a 60 km. Orizzonte più morbido, regolabile in Impostazioni › Montaggio. A terra la mappa non si colora più di rosso.'],
