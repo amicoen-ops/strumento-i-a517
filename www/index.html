@@ -2473,11 +2473,11 @@ window.IA517={
   wx:(data)=>{ PH.wx=data||{}; lsSet('ia517p_wx',PH.wx); PH.applyForecast(); },
   show:(v)=>PH.show(v),
   native:!!PH.native,
-  http:async(url)=>{
-    if(PH.native&&PH.native.http){ const r=await PH.native.http.get({url,headers:{'User-Agent':'I-A517-strumento/1.0'},responseType:'text',connectTimeout:12000,readTimeout:15000});
+  http:async(url,headers)=>{
+    if(PH.native&&PH.native.http){ const r=await PH.native.http.get({url,headers:Object.assign({'User-Agent':'I-A517-strumento/1.0'},headers||{}),responseType:'text',connectTimeout:12000,readTimeout:30000});
       return {status:r.status,text:typeof r.data==='string'?r.data:JSON.stringify(r.data)}; }
     const ctl=new AbortController(), tm=setTimeout(()=>ctl.abort(),12000);
-    try{ const r=await fetch(url,{signal:ctl.signal}); return {status:r.status,text:await r.text()}; } finally{ clearTimeout(tm); }
+    try{ const r=await fetch(url,{signal:ctl.signal,headers:headers||{}}); return {status:r.status,text:await r.text()}; } finally{ clearTimeout(tm); }
   },
 };
 PH.wx=lsGet('ia517p_wx',{});
@@ -3017,6 +3017,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.14','Spazi aerei veri d\'Italia con un pulsante: «Scarica gli spazi aerei d\'Italia (openAIP)». Prima il file pubblico di openAIP, senza account; se non risponde, l\'API openAIP con la chiave gratuita. Si riscaricano da soli a ogni ciclo AIRAC.'],
   ['1.0.13','Bussola letta direttamente dal sensore di Android (prima dipendeva dal browser interno e poteva mancare). Da fermo mappa e riquadro usano la prua della bussola (scritta PRUA) invece della traccia GPS, che a velocità zero è solo rumore.'],
   ['1.0.12','Bussola del telefono: a terra e sotto 25 km/h la prua viene dalla bussola (con la declinazione, prua vera); in volo dalla traccia GPS. Scelta in Impostazioni › Bussola. Quota: si può tarare a mano con una quota nota («Tara qui»).'],
   ['1.0.11','Ricerca dei campi scrivendo il nome o la sigla, in DIRECT TO e in NUOVA ROTTA. Invito alla donazione nei primi 5 avvii (non nella versione del Play Store). Informativa sulla privacy in Info.'],
@@ -3152,6 +3153,7 @@ PH.renderInfo=function(){
     <div class="ph-cred">
       <p><b>Campi e piste</b>: OurAirports (pubblico dominio) e note del pilota.</p>
       <p><b>Mappe</b>: © OpenStreetMap contributors (ODbL); OpenTopoMap (CC BY-SA); World Imagery © Esri, Vantor, Earthstar Geographics; IGM 1:25.000 e ortofoto AGEA dal Geoportale Nazionale (CC BY-SA).</p>
+      <p><b>Spazi aerei</b>: openAIP (CC BY-NC 4.0, www.openaip.net), quando li scarichi da lì; oppure il file OpenAir che carichi tu.</p>
       <p><b>Terreno</b>: Terrain Tiles su AWS Open Data (Mapzen, da SRTM, EU-DEM e altre fonti pubbliche).</p>
       <p><b>Meteo</b>: Open-Meteo (CC BY 4.0); METAR e TAF da aviationweather.gov (NOAA).</p>
       <p><b>Librerie</b>: Capacitor e i plugin Filesystem, Share, Keep Awake, Text to Speech (MIT); AndroidX (Apache 2.0). Segnalazioni via FormSubmit.</p>

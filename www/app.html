@@ -1206,48 +1206,98 @@ if(PHONE){
 setInterval(()=>{ if(Date.now()-MODEL.t>20*60000 && navigator.onLine) fetchModel(false); },60000);
 addEventListener('online',()=>fetchModel(false));
 
-// ---------------- spazi aerei da un indirizzo (openflightmaps o altro file OpenAir), ricaricati a ogni AIRAC ----------------
+// ---------------- spazi aerei veri dell'Italia da openAIP, ricaricati a ogni ciclo AIRAC ----------------
+// Due strade, nell'ordine: 1) il file OpenAir dell'Italia che openAIP esporta ogni giorno (pubblico, senza account);
+// 2) l'API di openAIP con la chiave gratuita del pilota. In più restano il file dal telefono e un indirizzo qualsiasi.
 (function(){
   const file=$('aspFile'), row=file&&file.closest('.srcrow'); if(!row) return;
   const DAY=864e5, EP=Date.UTC(2020,0,2);                                  // inizio del ciclo AIRAC 2001
-  const airac=t=>{ const n=Math.floor((t-EP)/(28*DAY)), s=EP+n*28*DAY, d=new Date(s), y=d.getUTCFullYear();
-    const k=Math.floor((s-Date.UTC(y,0,1))/(28*DAY))+1; return {start:s,code:String(y%100).padStart(2,'0')+String(k).padStart(2,'0')}; };
+  const airac=t=>{ const n=Math.floor((t-EP)/(28*DAY)), s=EP+n*28*DAY, y=new Date(s).getUTCFullYear();
+    return {start:s,code:String(y%100).padStart(2,'0')+String(Math.floor((s-Date.UTC(y,0,1))/(28*DAY))+1).padStart(2,'0')}; };
+  const BUCKET='https://storage.googleapis.com/29f98e10-a489-4c82-ae5e-489dbcd4912f/';
+  const FILES=['it_asp.txt','it_asp_txt'];
+  const API='https://api.core.openaip.net/api/airspaces';
   const saved=()=>store.get('ia517_openair',null)||{};
+  const keyGet=()=>store.get('ia517_openaip_key','');
+  const NATIVE=PHONE&&parent.IA517&&parent.IA517.native;
   const box=document.createElement('div'); box.className='aspnet';
-  box.innerHTML=`<div class="sub" style="margin-top:10px">Spazi aerei aggiornati: <b>openflightmaps</b> pubblica l'Italia in formato OpenAir a ogni ciclo AIRAC, con licenza gratuita. Scarica il file dalla sua pagina e caricalo qui sopra, oppure incolla l'indirizzo del file: l'app lo riscarica da sola a ogni nuovo ciclo.</div>
-    <div class="btnrow" style="margin-top:6px"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://openflightmaps.org/downloads/li/" target="_blank" rel="noopener">Apri openflightmaps · Italia</a></div>
-    <div class="fld"><label for="aspUrl">Indirizzo del file OpenAir</label><input id="aspUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://…/openair….txt" value="${esc(saved().url||'')}"></div>
-    <div class="btnrow"><button class="btn pri" type="button" id="aspUrlGo">Scarica ora</button></div>
-    <div class="sub" id="aspUrlMsg"></div>`;
+  box.innerHTML=`<div class="btnrow" style="margin-top:10px"><button class="btn pri" type="button" id="oaipGo">Scarica gli spazi aerei d'Italia (openAIP)</button></div>
+    <div class="sub" id="oaipMsg"></div>
+    <details style="margin-top:8px"><summary class="sub">Chiave openAIP e altre strade</summary>
+      <div class="sub" style="margin-top:6px">Di solito non serve niente: l'app scarica il file dell'Italia che openAIP pubblica ogni giorno. Se non risponde, usa l'API di openAIP con la tua chiave gratuita: crea un account su openaip.net, poi Profilo › API Clients › crea una chiave, e incollala qui.</div>
+      <div class="fld"><label for="oaipKey">Chiave API openAIP (facoltativa)</label><input id="oaipKey" type="text" autocomplete="off" spellcheck="false" value="${esc(keyGet())}" placeholder="incolla la chiave"></div>
+      <div class="fld"><label for="aspUrl">Oppure l'indirizzo di un file OpenAir</label><input id="aspUrl" type="text" inputmode="url" autocomplete="off" placeholder="https://…" value="${esc(saved().kind==='url'?saved().url||'':'')}"></div>
+      <div class="btnrow"><button class="btn" type="button" id="aspUrlGo">Scarica da questo indirizzo</button><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://www.openaip.net/data/airspaces" target="_blank" rel="noopener">Apri openAIP</a></div>
+    </details>`;
   row.after(box);
-  const msg=t=>{ $('aspUrlMsg').innerHTML=t; };
+  const msg=h=>{ $('oaipMsg').innerHTML=h; };
   const show=()=>{ const s=saved(), a=airac(Date.now());
-    if(s.url && s.t) msg(`Ultimo scarico ${new Date(s.t).toLocaleDateString('it-IT')} · ciclo AIRAC ${airac(s.t).code}${s.t<a.start?' · <span class="warn">ciclo nuovo: lo riscarico appena c\'è rete</span>':' (in vigore)'}`); };
-  async function get(url){
-    const H=PHONE&&parent.IA517&&parent.IA517.http;
-    if(H) return H(url);
-    const r=await fetch(url); return {status:r.status,text:await r.text()};
+    if(!s.t){ msg('Scarica una volta con internet: poi restano sul telefono e si aggiornano da soli a ogni ciclo AIRAC (ogni 28 giorni).'); return; }
+    msg(`In uso: <b>${esc(s.src||s.name)}</b> · ${s.count||ASP.length} spazi · scaricati il ${new Date(s.t).toLocaleDateString('it-IT')} (AIRAC ${airac(s.t).code})`+
+        (s.t<a.start?` · <span class="warn">è iniziato il ciclo ${a.code}: li riscarico appena c'è rete</span>`:''));
+  };
+  const get=async(url,headers)=>{ const H=PHONE&&parent.IA517&&parent.IA517.http; if(H) return H(url,headers);
+    const r=await fetch(url,{headers:headers||{}}); return {status:r.status,text:await r.text()}; };
+  const use=(text,src,meta)=>{
+    const list=parseOpenAir(text); if(!list.length) throw new Error('nessuno spazio aereo nel file');
+    ASP=list; ASP_SRC={real:true,name:src,count:list.length};
+    const rec=Object.assign({name:src,src,text,t:Date.now(),count:list.length},meta);
+    store.set('ia517_openair',rec);
+    if((store.get('ia517_openair',null)||{}).t!==rec.t) toast('Spazi aerei in uso, ma troppo grandi per restare salvati: riscaricali al prossimo avvio');
+    update(); show(); return list.length;
+  };
+  // openAIP (API) -> OpenAir: stesso formato del file, così briefing, profilo e avvisi restano identici
+  const dms=(v,pos,neg,w)=>{ const a=Math.abs(v), d=Math.floor(a), m=Math.floor((a-d)*60), s=Math.round(((a-d)*60-m)*60);
+    const ss=s===60?59:s; return String(d).padStart(w,'0')+':'+String(m).padStart(2,'0')+':'+String(ss).padStart(2,'0')+' '+(v>=0?pos:neg); };
+  const lim=L=>{ if(!L) return 'GND'; const v=+L.value||0, u=+L.unit, r=+L.referenceDatum;
+    if(u===6) return 'FL'+Math.round(v); if(r===0 && v===0) return 'GND';
+    const ft=u===0?Math.round(v/0.3048):Math.round(v); return ft+'ft '+(r===0?'AGL':'AMSL'); };
+  const TYPE={1:'R',2:'Q',3:'P',4:'CTR',5:'TMZ',6:'RMZ',8:'R',9:'R',17:'Q',18:'Q',21:'GSEC',28:'W'};
+  const SKIP=new Set([10,11,12,15,16,27,33]);                              // FIR, UIR, ADIZ, aerovie, MTR, settori ACC e FIS
+  const CLS=['A','B','C','D','E','F','G'];
+  const toOA=items=>{ const L=['* openAIP · CC BY-NC 4.0 · www.openaip.net'];
+    for(const it of items){ if(SKIP.has(+it.type)) continue; const g=it.geometry; if(!g||!g.coordinates) continue;
+      const ring=g.type==='Polygon'?g.coordinates[0]:(g.type==='MultiPolygon'?g.coordinates[0][0]:null); if(!ring||ring.length<4) continue;
+      const cls=TYPE[+it.type]||CLS[+it.icaoClass]||'UNC';
+      L.push('AC '+cls,'AN '+String(it.name||'').replace(/[\r\n]/g,' '),'AL '+lim(it.lowerLimit),'AH '+lim(it.upperLimit));
+      for(const [lon,lat] of ring.slice(0,-1)) L.push('DP '+dms(lat,'N','S',2)+' '+dms(lon,'E','W',3)); }
+    return L.join('\n'); };
+  async function viaApi(key){
+    const items=[]; let page=1, pages=1;
+    do{ const r=await get(`${API}?country=IT&limit=1000&page=${page}`,{'x-openaip-api-key':key,'Accept':'application/json'});
+      if(r.status===401||r.status===403) throw new Error('chiave openAIP non valida');
+      if(r.status!==200) throw new Error('openAIP ha risposto '+r.status);
+      const j=JSON.parse(r.text); items.push(...(j.items||[])); pages=j.totalPages||1; page++;
+    } while(page<=pages && page<=10);
+    return toOA(items);
   }
-  async function load(url,quiet){
+  async function openaip(quiet){
+    if(!quiet) msg('Scarico da openAIP…');
+    let why='';
+    for(const f of FILES){                                                 // 1) file pubblico dell'Italia
+      try{ const r=await get(BUCKET+f); if(r.status===200 && /^\s*(\*|AC\s)/m.test(r.text||'')){ const n=use(r.text,'openAIP · Italia',{kind:'openaip'}); if(!quiet) toast(`${n} spazi aerei d'Italia da openAIP`); return; }
+        why='file openAIP: risposta '+r.status; }catch(e){ why='file openAIP: '+(e&&e.message||e); }
+    }
+    const key=($('oaipKey')&&$('oaipKey').value.trim())||keyGet();
+    if(key){ try{ const n=use(await viaApi(key),'openAIP · Italia (API)',{kind:'openaip'}); if(!quiet) toast(`${n} spazi aerei d'Italia da openAIP`); return; }
+             catch(e){ why=String(e&&e.message||e); } }
+    else why+=(why?' · ':'')+'per l\'altra strada serve la chiave gratuita (apri «Chiave openAIP e altre strade»)';
+    msg(`<span class="warn">Non riuscito: ${esc(why)}.</span>${NATIVE?'':' Dal browser openAIP può non permettere la lettura diretta: usa l\'app installata, oppure scarica il file e usa «Carica file OpenAir».'}`);
+  }
+  async function byUrl(url,quiet){
     url=String(url||'').trim(); if(!/^https?:\/\//i.test(url)){ if(!quiet) msg('<span class="warn">Serve un indirizzo che inizia con http:// o https://</span>'); return; }
     if(!quiet) msg('Scarico…');
-    try{
-      const r=await get(url); if(r.status!==200) throw new Error('risposta '+r.status);
-      const list=parseOpenAir(String(r.text||''));
-      if(!list.length) throw new Error('nel file non ci sono spazi aerei OpenAir');
-      const name=decodeURIComponent(url.split('?')[0].split('/').pop()||'openair.txt');
-      ASP=list; ASP_SRC={real:true,name,count:list.length};
-      store.set('ia517_openair',{name,text:String(r.text),url,t:Date.now()});
-      update(); show(); if(!quiet) toast(`${list.length} spazi aerei scaricati`);
-    }catch(e){
-      const why=String(e&&e.message||e);
-      msg(`<span class="warn">Non riuscito: ${esc(why)}.</span>${PHONE&&parent.IA517&&parent.IA517.native?'':' Dal browser molti siti non permettono la lettura diretta: scarica il file e usa «Carica file OpenAir».'}`);
-    }
+    try{ const r=await get(url); if(r.status!==200) throw new Error('risposta '+r.status);
+      const n=use(String(r.text||''),decodeURIComponent(url.split('?')[0].split('/').pop()||'openair.txt'),{kind:'url',url}); if(!quiet) toast(`${n} spazi aerei scaricati`);
+    }catch(e){ msg(`<span class="warn">Non riuscito: ${esc(String(e&&e.message||e))}.</span>`); }
   }
-  $('aspUrlGo').onclick=()=>load($('aspUrl').value,false);
+  $('oaipGo').onclick=()=>openaip(false);
+  $('oaipKey').addEventListener('change',e=>store.set('ia517_openaip_key',e.target.value.trim()));
+  $('aspUrlGo').onclick=()=>byUrl($('aspUrl').value,false);
   show();
-  // all'avvio: ciclo AIRAC nuovo rispetto all'ultimo scarico -> si riscarica in silenzio
-  const s=saved(); if(s.url && (!s.t || s.t<airac(Date.now()).start)) setTimeout(()=>load(s.url,true),6000);
+  // all'avvio: se è iniziato un ciclo AIRAC nuovo rispetto all'ultimo scarico, si riscarica in silenzio dalla stessa fonte
+  const s=saved();
+  if(s.t && s.t<airac(Date.now()).start){ if(s.kind==='openaip') setTimeout(()=>openaip(true),6000); else if(s.kind==='url'&&s.url) setTimeout(()=>byUrl(s.url,true),6000); }
 })();
 
 // ---------------- Desk Aeronautico: collegamenti rapidi (NOTAM, meteo, briefing) ----------------

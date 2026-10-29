@@ -133,5 +133,6 @@ DATI E SERVIZI (non inclusi nell'app, letti in rete)
                       World Imagery (c) Esri e fornitori; IGM 1:25.000 e ortofoto AGEA
                       dal Geoportale Nazionale (CC BY-SA)
   Terreno             Terrain Tiles su AWS Open Data (Mapzen; SRTM, EU-DEM e altre fonti)
+  Spazi aerei         openAIP (CC BY-NC 4.0), www.openaip.net, se scaricati da lì
   Meteo               Open-Meteo (CC BY 4.0); METAR e TAF da aviationweather.gov (NOAA)
   Segnalazioni        FormSubmit
