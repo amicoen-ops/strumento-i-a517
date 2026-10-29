@@ -7,20 +7,21 @@ on:
 
 permissions:
   contents: write
+  issues: write
 
 jobs:
   apk:
     runs-on: ubuntu-latest
     timeout-minutes: 40
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: 21
@@ -38,7 +39,16 @@ jobs:
           VERSION_NAME: 1.0.${{ github.run_number }}
         run: |
           chmod +x gradlew
-          ./gradlew assembleRelease --no-daemon --stacktrace
+          set -o pipefail
+          ./gradlew assembleRelease --no-daemon 2>&1 | tee ../build.log
+
+      - name: Registro dell'errore (in una issue, per poterlo leggere da fuori)
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo '```'; grep -n -E "error:|ERROR|What went wrong|FAILURE|e: |warning: \[" build.log | head -60; echo '---'; tail -80 build.log; echo '```'; } > errore.md || true
+          gh issue create -R ${{ github.repository }} --title "Compilazione ${{ github.run_number }} fallita" --body-file errore.md || true
 
       - name: Nome del file
         run: cp android/app/build/outputs/apk/release/app-release.apk I-A517-Strumento-1.0.${{ github.run_number }}.apk
