@@ -177,6 +177,10 @@
   .ph-range input{width:100%;accent-color:#ff4fd8}
   .ph-stat{cursor:default}
   .ph-imp select{width:100%;min-height:44px;border-radius:10px;border:1px solid var(--line);background:var(--panel2);color:inherit;font:inherit;padding:0 8px}
+  /* ricerca dei campi nel menu */
+  .ph-q{display:flex;flex-direction:column;gap:2px;margin:4px 0 6px}
+  .ph-q input{width:100%;box-sizing:border-box;min-height:40px;border-radius:9px;border:1px solid var(--mag,#ff4fd8);background:rgba(6,10,15,.9);color:#fff;font:600 16px system-ui,sans-serif;padding:0 10px}
+  .ph-q small{font:600 11px system-ui,sans-serif;color:#9fb0c4;text-align:center}
 </style>
 
 <h1>Orizzonte Sintetico</h1>
@@ -2846,6 +2850,24 @@ PH.act=function(a){ if(!PH) return; const t=new Date(); PH.trail.push(t.toTimeSt
 // ---- avvio della parte telefono ----
 (function(){
   { const tp=togglePage; togglePage=function(){ tp(); PH.act('pagina '+PAGE); }; }
+  // DIRECT TO e NUOVA ROTTA: si può scrivere il nome (o la sigla) del campo per cercarlo
+  PH.q='';
+  const norm=x=>String(x||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  const hit=f=>{ const q=norm(PH.q).trim(); if(!q) return true; const hay=norm(f.short+' '+f.name+' '+f.id); return q.split(/\s+/).every(w=>hay.includes(w)); };
+  { const di=dtoItems; dtoItems=function(){ return di().filter(x=>x.t!=='field'||hit(x.f)); }; }
+  { const bi=buildItems; buildItems=function(){ return bi().filter(x=>x.t!=='field'||hit(x.f)); }; }
+  const qBox=document.createElement('div'); qBox.className='ph-q'; qBox.hidden=true;
+  qBox.innerHTML='<input id="phQ" type="search" enterkeyhint="search" autocomplete="off" autocapitalize="characters" placeholder="Scrivi il nome o la sigla del campo"><small id="phQn"></small>';
+  el('menuTitle').after(qBox);
+  const qIn=qBox.querySelector('input');
+  qIn.addEventListener('input',()=>{ PH.q=qIn.value; items=menuMode==='dto'?dtoItems():buildItems(); const fi=items.findIndex(x=>x.t==='field'); sel=fi>=0?fi:0; renderMenu(); });
+  qIn.addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.preventDefault(); qIn.blur(); const it=items[sel]; if(it&&it.t==='field') push(); } e.stopPropagation(); });
+  ['pointerdown','click'].forEach(ev=>qBox.addEventListener(ev,e=>e.stopPropagation()));
+  { const rm=renderMenu; renderMenu=function(){ rm(); const on=menuMode==='dto'||menuMode==='build'; qBox.hidden=!on;
+      if(on){ const n=items.filter(x=>x.t==='field').length; el('phQn').textContent=PH.q?(n?`${n} ${n===1?'campo trovato':'campi trovati'}`:'nessun campo con questo nome'):`${n} campi · dal più vicino`; } }; }
+  { const od=openDto; openDto=function(){ PH.q=''; qIn.value=''; return od(); }; }
+  { const ob=openBuild; openBuild=function(){ PH.q=''; qIn.value=''; return ob(); }; }
+  { const ba=buildAdd; buildAdd=function(f){ PH.q=''; qIn.value=''; return ba(f); }; }
   { const ro_=rotate; rotate=function(d){ PH.act('ruota '+d+(PAGE==='map'?' (zoom)':'')); return ro_(d); }; }
   { const pu_=push; push=function(){ PH.act('premi'); return pu_(); }; }
   { const sh=PH.show; PH.show=function(v){ PH.act('apri '+v); return sh(v); }; }
@@ -2947,6 +2969,7 @@ const PH_INFO={
   owner:"Enrico D'Amico",
 };
 const PH_CHANGES=[
+  ['1.0.11','Ricerca dei campi scrivendo il nome o la sigla, in DIRECT TO e in NUOVA ROTTA. Invito alla donazione nei primi 5 avvii (non nella versione del Play Store). Informativa sulla privacy in Info.'],
   ['1.0.10','Assetto giusto anche con il telefono girato in orizzontale (da tutte e due le parti) o capovolto: i sensori seguono il verso dello schermo, e quando giri il telefono l\'orizzonte si rilivella da solo.'],
   ['1.0.9','Corretto il blocco vero: con il GPS irregolare (al chiuso) il filtro della quota diventava instabile e la quota arrivava a miliardi di metri, bloccando la scala della quota. Nuovo filtro stabile e protezioni nel disegno. Nuova scheda SIMULA: vola da sola una rotta salvata o un direct to, con velocità, quota, vento e tempo accelerato fino a ×8. Campi di tutto il Nord Italia da OurAirports: 342 tra aeroporti e aviosuperfici.'],
   ['1.0.8','Scatola nera: l\'app ricorda ultimo stato e ultime azioni; dopo un blocco, alla riapertura, li alleghi alla segnalazione da Info.'],
@@ -3032,7 +3055,7 @@ PH.terms=function(){
     <div class="ph-btns"><button class="ph-btn pri" id="phTermsGo" disabled>Accetto e continuo</button></div></section></div>`;
   document.body.appendChild(d);
   el('phTermsOk').onchange=e=>{ el('phTermsGo').disabled=!e.target.checked; };
-  el('phTermsGo').onclick=()=>{ lsSet('ia517p_terms',{v:PH_INFO.termsVersion,t:Date.now(),ver:PH.version().version}); d.remove(); };
+  el('phTermsGo').onclick=()=>{ lsSet('ia517p_terms',{v:PH_INFO.termsVersion,t:Date.now(),ver:PH.version().version}); d.remove(); setTimeout(()=>PH.donateNag(),1200); };
 };
 
 PH.renderInfo=function(){
@@ -3050,12 +3073,12 @@ PH.renderInfo=function(){
   box.innerHTML=`
   <section class="ph-hero"><img src="icon-192.png" alt="" width="64" height="64"><div><b>I-A517 Strumento di volo</b><span>${PH_INFO.author}</span><span class="ph-sub">© 2026 ${PH_INFO.owner} · Tutti i diritti riservati</span></div></section>
   <section><h3>Versione</h3>
-    <div class="ph-row"><span>Installata</span><small><b>${b.version}</b> · build ${b.build} · ${b.channel==='apk'?'app Android':'app dal browser'}</small></div>
+    <div class="ph-row"><span>Installata</span><small><b>${b.version}</b> · build ${b.build} · ${b.channel==='apk'?'app Android':(b.channel==='play'?'Play Store':'app dal browser')}</small></div>
     <div class="ph-row"><span>Installata o aggiornata il</span><small>${dt(h[0]&&h[0].t)}</small></div>
     ${h[1]?`<div class="ph-row"><span>Versione precedente</span><small>${h[1].v} · fino al ${dt(h[0].t)}</small></div>`:''}
     <div class="ph-row"><span>Avvertenze accettate</span><small>${acc?dt(acc.t):'no'}</small></div>
   </section>
-  <section><h3>Aggiornamenti</h3><div id="phUpd">${b.channel==='apk'?upHtml(up):'<p class="ph-sub">L\'app dal browser si aggiorna da sola: la nuova versione si carica al lancio successivo.</p>'}</div>
+  <section><h3>Aggiornamenti</h3><div id="phUpd">${b.channel==='apk'?upHtml(up):(b.channel==='play'?'<p class="ph-sub">Gli aggiornamenti arrivano dal Play Store.</p>':'<p class="ph-sub">L\'app dal browser si aggiorna da sola: la nuova versione si carica al lancio successivo.</p>')}</div>
     ${b.channel==='apk'?'<div class="ph-btns"><button class="ph-btn" id="phUpdGo">Controlla ora</button></div>':''}
   </section>
   <section><h3>Novità</h3>${PH_CHANGES.map(([v,t])=>`<div class="ph-row ph-col"><b>${v}</b><small>${t}</small></div>`).join('')}</section>
@@ -3083,12 +3106,13 @@ PH.renderInfo=function(){
       <p><b>Meteo</b>: Open-Meteo (CC BY 4.0); METAR e TAF da aviationweather.gov (NOAA).</p>
       <p><b>Librerie</b>: Capacitor e i plugin Filesystem, Share, Keep Awake, Text to Speech (MIT); AndroidX (Apache 2.0). Segnalazioni via FormSubmit.</p>
       <p><b>Progetto</b>: strumento di volo DIY da 80 mm per l'Avid Flyer I-A517.</p>
+      <p><b>Privacy</b>: niente account, pubblicità o analisi; posizione e dati restano sul telefono. Informativa completa: <a href="https://github.com/amicoen-ops/strumento-i-a517/blob/main/PRIVACY.md" target="_blank" rel="noopener">PRIVACY.md</a>.</p>
     </div>
   </section>
-  <section class="ph-donate"><h3>Ti è utile?</h3>
+  ${b.channel==='play'?'':`<section class="ph-donate"><h3>Ti è utile?</h3>
     <p class="ph-sub">L'app è gratuita e senza pubblicità. Se vuoi contribuire alle spese (servizi, hardware per le prove), puoi offrire un caffè o quello che preferisci.</p>
     <a class="ph-btn ph-paypal" href="${PH_INFO.paypal}" target="_blank" rel="noopener">♥ Dona con PayPal</a>
-  </section>`;
+  </section>`}`;
   el('phLicDet').ontoggle=async e=>{ const pre=el('phLicTxt'); if(!e.target.open || pre.dataset.ok) return;
     try{ const r=await fetch('LICENZE.txt'); pre.textContent=(await r.text()).replace(/([a-zà-ù0-9,;:'")])\n(?=[^\n\s])/g,'$1 ').replace(/([a-zà-ù0-9,;:'")])\n {2,}(?![a-z]\) )/g,'$1 '); pre.style.whiteSpace='pre-wrap'; pre.dataset.ok=1; }catch(_){ pre.textContent='Testo non disponibile: lo trovi nel file LICENSE del repository amicoen-ops/strumento-i-a517.'; } };
   let kind='Problema';
@@ -3107,9 +3131,28 @@ PH.renderInfo=function(){
   };
   if(el('phUpdGo')) el('phUpdGo').onclick=async()=>{ el('phUpd').innerHTML='<p class="ph-sub">Controllo…</p>'; el('phUpd').innerHTML=upHtml(await PH.checkUpdate(true)); };
 };
+// donazione: invito nei primi 5 avvii (non nella versione del Play Store, che non permette donazioni nell'app)
+PH.donateNag=function(){
+  if(PH.version().channel==='play' || lsGet('ia517p_donated',false)) return;
+  const n=PH.launchN||0; if(n<1 || n>5 || document.getElementById('phNag') || document.getElementById('phTerms')) return;
+  if(PH.flight || PH.sim || (S.gpsReal && S.gs>25)) return;          // mai sopra lo strumento in volo o in movimento
+  const d=document.createElement('div'); d.className='ph-sheet ph-terms'; d.id='phNag';
+  d.innerHTML=`<div class="ph-imp"><section class="ph-donate"><h3>Ti piace I-A517 Strumento?</h3>
+    <p>L'app è gratuita e senza pubblicità: è nata per volare più sicuri con quello che abbiamo in tasca.</p>
+    <p class="ph-sub">Se ti è utile, puoi contribuire alle spese (servizi, hardware per le prove, tempo) con un caffè o quello che preferisci. Non cambia niente nell'app: è solo un grazie.</p>
+    <a class="ph-btn ph-paypal" id="phNagPay" href="${PH_INFO.paypal}" target="_blank" rel="noopener">♥ Dona con PayPal</a>
+    <div class="ph-btns" style="justify-content:center"><button class="ph-btn" id="phNagLater">Più tardi</button><button class="ph-btn" id="phNagDone">Ho già donato</button></div>
+    <p class="ph-sub">${n<5?`Questo invito compare ancora ${5-n} ${5-n===1?'volta':'volte'} all'avvio, poi resta solo in Info.`:'È l\'ultima volta che compare all\'avvio: la donazione resta sempre in Info.'}</p></section></div>`;
+  document.body.appendChild(d);
+  const close=()=>d.remove();
+  el('phNagLater').onclick=close;
+  el('phNagDone').onclick=()=>{ lsSet('ia517p_donated',true); close(); toast('GRAZIE!'); };
+  el('phNagPay').addEventListener('click',()=>{ PH.act&&PH.act('dona'); setTimeout(close,400); });
+};
 // avvio: avvertenze, storico versioni, controllo aggiornamenti una volta al giorno, coda segnalazioni
 (function(){
-  PH.versionHistory(); PH.terms();
+  PH.versionHistory(); PH.launchN=(lsGet('ia517p_launches',0)|0)+1; lsSet('ia517p_launches',PH.launchN);
+  PH.terms(); if(!document.getElementById('phTerms')) setTimeout(()=>PH.donateNag(),2500);
   const up=lsGet('ia517p_update',null);
   if(PH.version().channel==='apk' && (!up || Date.now()-up.t>20*3600e3)) setTimeout(()=>PH.checkUpdate(false),8000);
   setTimeout(()=>PH.flushReports(),5000);

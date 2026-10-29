@@ -1206,6 +1206,63 @@ if(PHONE){
 setInterval(()=>{ if(Date.now()-MODEL.t>20*60000 && navigator.onLine) fetchModel(false); },60000);
 addEventListener('online',()=>fetchModel(false));
 
+// ---------------- spazi aerei da un indirizzo (openflightmaps o altro file OpenAir), ricaricati a ogni AIRAC ----------------
+(function(){
+  const file=$('aspFile'), row=file&&file.closest('.srcrow'); if(!row) return;
+  const DAY=864e5, EP=Date.UTC(2020,0,2);                                  // inizio del ciclo AIRAC 2001
+  const airac=t=>{ const n=Math.floor((t-EP)/(28*DAY)), s=EP+n*28*DAY, d=new Date(s), y=d.getUTCFullYear();
+    const k=Math.floor((s-Date.UTC(y,0,1))/(28*DAY))+1; return {start:s,code:String(y%100).padStart(2,'0')+String(k).padStart(2,'0')}; };
+  const saved=()=>store.get('ia517_openair',null)||{};
+  const box=document.createElement('div'); box.className='aspnet';
+  box.innerHTML=`<div class="sub" style="margin-top:10px">Spazi aerei aggiornati: <b>openflightmaps</b> pubblica l'Italia in formato OpenAir a ogni ciclo AIRAC, con licenza gratuita. Scarica il file dalla sua pagina e caricalo qui sopra, oppure incolla l'indirizzo del file: l'app lo riscarica da sola a ogni nuovo ciclo.</div>
+    <div class="btnrow" style="margin-top:6px"><a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="https://openflightmaps.org/downloads/li/" target="_blank" rel="noopener">Apri openflightmaps · Italia</a></div>
+    <div class="fld"><label for="aspUrl">Indirizzo del file OpenAir</label><input id="aspUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://…/openair….txt" value="${esc(saved().url||'')}"></div>
+    <div class="btnrow"><button class="btn pri" type="button" id="aspUrlGo">Scarica ora</button></div>
+    <div class="sub" id="aspUrlMsg"></div>`;
+  row.after(box);
+  const msg=t=>{ $('aspUrlMsg').innerHTML=t; };
+  const show=()=>{ const s=saved(), a=airac(Date.now());
+    if(s.url && s.t) msg(`Ultimo scarico ${new Date(s.t).toLocaleDateString('it-IT')} · ciclo AIRAC ${airac(s.t).code}${s.t<a.start?' · <span class="warn">ciclo nuovo: lo riscarico appena c\'è rete</span>':' (in vigore)'}`); };
+  async function get(url){
+    const H=PHONE&&parent.IA517&&parent.IA517.http;
+    if(H) return H(url);
+    const r=await fetch(url); return {status:r.status,text:await r.text()};
+  }
+  async function load(url,quiet){
+    url=String(url||'').trim(); if(!/^https?:\/\//i.test(url)){ if(!quiet) msg('<span class="warn">Serve un indirizzo che inizia con http:// o https://</span>'); return; }
+    if(!quiet) msg('Scarico…');
+    try{
+      const r=await get(url); if(r.status!==200) throw new Error('risposta '+r.status);
+      const list=parseOpenAir(String(r.text||''));
+      if(!list.length) throw new Error('nel file non ci sono spazi aerei OpenAir');
+      const name=decodeURIComponent(url.split('?')[0].split('/').pop()||'openair.txt');
+      ASP=list; ASP_SRC={real:true,name,count:list.length};
+      store.set('ia517_openair',{name,text:String(r.text),url,t:Date.now()});
+      update(); show(); if(!quiet) toast(`${list.length} spazi aerei scaricati`);
+    }catch(e){
+      const why=String(e&&e.message||e);
+      msg(`<span class="warn">Non riuscito: ${esc(why)}.</span>${PHONE&&parent.IA517&&parent.IA517.native?'':' Dal browser molti siti non permettono la lettura diretta: scarica il file e usa «Carica file OpenAir».'}`);
+    }
+  }
+  $('aspUrlGo').onclick=()=>load($('aspUrl').value,false);
+  show();
+  // all'avvio: ciclo AIRAC nuovo rispetto all'ultimo scarico -> si riscarica in silenzio
+  const s=saved(); if(s.url && (!s.t || s.t<airac(Date.now()).start)) setTimeout(()=>load(s.url,true),6000);
+})();
+
+// ---------------- Desk Aeronautico: collegamenti rapidi (NOTAM, meteo, briefing) ----------------
+(function(){
+  const D='https://www.deskaeronautico.it/';
+  const L=[['mappa/','Mappa NOTAM'],['cerca-notam/','Cerca NOTAM'],['airport-easy-briefing/','Briefing aeroporto'],['metar/','METAR'],['taf/','TAF'],['sigmet-e-airmet/','SIGMET e AIRMET'],['carte-meteo/','Carte meteo']];
+  const card=(ids)=>{ const s=document.createElement('section'); s.className='card';
+    s.innerHTML=`<h2>Desk Aeronautico</h2><div class="sub">Portale italiano gratuito con NOTAM, meteo e briefing presi dalle fonti AIS: comodo per un controllo veloce. Lo stesso sito avverte che non è una fonte ufficiale né a uso operativo: per il volo valgono AIP, NOTAM e meteo ufficiali.</div>
+      <div class="btnrow" style="margin-top:8px">${L.filter(([p])=>ids.includes(p)).map(([p,t])=>`<a class="btn" style="display:inline-flex;align-items:center;text-decoration:none" href="${D+p}" target="_blank" rel="noopener">${t}</a>`).join('')}</div>`;
+    return s; };
+  const notam=$('notamList'), nSec=notam&&notam.closest('section');
+  if(nSec) nSec.after(card(['mappa/','cerca-notam/','airport-easy-briefing/','sigmet-e-airmet/']));
+  const met=$('tab-meteo'); if(met){ const first=met.querySelector('section'); const c=card(['metar/','taf/','sigmet-e-airmet/','carte-meteo/']); if(first) first.before(c); else met.appendChild(c); }
+})();
+
 mergeUserFields(); addRwRow();
 renderRoute(); renderStatus(); renderSaved(); renderUser(); update(); showTab(location.hash.slice(1)||'piano'); setLink();
 probe(); setInterval(probe,5000);

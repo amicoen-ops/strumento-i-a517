@@ -53,6 +53,21 @@ jobs:
           set -o pipefail
           ./gradlew assembleRelease --no-daemon 2>&1 | tee ../build.log
 
+      - name: Nome del file
+        run: cp android/app/build/outputs/apk/release/app-release.apk I-A517-Strumento-1.0.${{ github.run_number }}.apk
+
+      - name: Versione per il Play Store (AAB, senza donazioni né aggiornamenti da GitHub, come chiede Google)
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          VERSION_CODE: ${{ github.run_number }}
+          VERSION_NAME: 1.0.${{ github.run_number }}
+        run: |
+          set -o pipefail
+          echo "window.IA517_BUILD={version:'1.0.${{ github.run_number }}',build:'${{ github.run_number }}',channel:'play'};" > www/version.js
+          npx cap sync android
+          (cd android && ./gradlew bundleRelease --no-daemon 2>&1 | tee -a ../build.log)
+          cp android/app/build/outputs/bundle/release/app-release.aab I-A517-Strumento-1.0.${{ github.run_number }}-play-store.aab
+
       - name: Registro dell'errore (in una issue, per poterlo leggere da fuori)
         if: failure()
         env:
@@ -61,13 +76,14 @@ jobs:
           { echo '```'; grep -n -E "error:|ERROR|What went wrong|FAILURE|e: |warning: \[" build.log | head -60; echo '---'; tail -80 build.log; echo '```'; } > errore.md || true
           gh issue create -R ${{ github.repository }} --title "Compilazione ${{ github.run_number }} fallita" --body-file errore.md || true
 
-      - name: Nome del file
-        run: cp android/app/build/outputs/apk/release/app-release.apk I-A517-Strumento-1.0.${{ github.run_number }}.apk
-
       - name: Pubblica l'APK
         uses: softprops/action-gh-release@v2
         with:
           tag_name: build-${{ github.run_number }}
           name: I-A517 Strumento 1.0.${{ github.run_number }}
-          body: Scarica il file .apk dal telefono e installalo (sopra la versione precedente, i dati restano).
-          files: I-A517-Strumento-1.0.${{ github.run_number }}.apk
+          body: |
+            Scarica il file .apk dal telefono e installalo (sopra la versione precedente, i dati restano).
+            Il file .aab è la versione per il Play Store: si carica in Google Play Console, non si installa sul telefono.
+          files: |
+            I-A517-Strumento-1.0.${{ github.run_number }}.apk
+            I-A517-Strumento-1.0.${{ github.run_number }}-play-store.aab
